@@ -27,7 +27,7 @@ var (
 	autoSettleFlagRegexp = regexp.MustCompile("(?i)^on*|^off$|^*$|^multi$|^1$|^0$")
 )
 
-type HPP struct {
+type Request struct {
 	// The merchant ID supplied by Realex Payments – note this is not the merchant number supplied by your bank.
 	MerchantID string `json:"MERCHANT_ID"`
 
@@ -131,41 +131,41 @@ type HPP struct {
 }
 
 // Validate the HPP request fields
-func (hpp *HPP) Validate() error {
-	return validation.ValidateStruct(hpp,
+func (r *Request) Validate() error {
+	return validation.ValidateStruct(r,
 		validation.Field(
-			&hpp.MerchantID,
+			&r.MerchantID,
 			validation.Required.Error("is required"),
 			validation.Length(1, 50).Error(merchantIDSize),
 			validation.Match(merchantIDRegexp).Error(merchantIDPattern),
 		),
 		validation.Field(
-			&hpp.Account,
+			&r.Account,
 			validation.Length(0, 30).Error(accountSize),
 			validation.Match(accountRegexp).Error(accountPattern),
 		),
 		validation.Field(
-			&hpp.OrderID,
+			&r.OrderID,
 			validation.Length(0, 50).Error(orderIDSize),
 			validation.Match(orderIDRegexp).Error(orderIDPattern),
 		),
 		validation.Field(
-			&hpp.Amount,
+			&r.Amount,
 			validation.Length(1, 11).Error(amountSize),
 			validation.Match(numericRegexp).Error(amountPattern),
 		),
 		validation.Field(
-			&hpp.Currency,
+			&r.Currency,
 			validation.Length(3, 3).Error(currencySize),
 			validation.Match(alphaRegexp).Error(currencyPattern),
 		),
 		validation.Field(
-			&hpp.Hash,
+			&r.Hash,
 			validation.Length(40, 40).Error(hashSize),
 			validation.Match(hexadecimalRegexp).Error(hashPattern),
 		),
 		validation.Field(
-			&hpp.Hash,
+			&r.Hash,
 			validation.Match(autoSettleFlagRegexp).Error(autoSettleFlagPattern),
 		),
 	)
@@ -212,9 +212,9 @@ func (hpp *HPP) Validate() error {
 //
 // This method takes the pre-built string of concatenated fields and the secret and returns the
 // SHA-1 hash to be placed in the request sent to Realex.
-func (hpp *HPP) BuildHash(secret string) string {
+func (r *Request) BuildHash(secret string) string {
 	//first pass hashes the String of required fields
-	s := hpp.buildHashString()
+	s := r.buildHashString()
 
 	firstHash := sha1.Sum([]byte(s))
 	firstHashStr := fmt.Sprintf("%x", firstHash)
@@ -226,34 +226,34 @@ func (hpp *HPP) BuildHash(secret string) string {
 	return fmt.Sprintf("%x", secondHash)
 }
 
-func (hpp *HPP) buildHashString() string {
-	a := hpp.basicHash()
+func (r *Request) buildHashString() string {
+	a := r.basicHash()
 
-	if hpp.canStoreCard() {
-		a = append(a, []string{hpp.PayerReference, hpp.PaymentReference}...)
+	if r.canStoreCard() {
+		a = append(a, []string{r.PayerReference, r.PaymentReference}...)
 	}
 
-	if hpp.FraudFilterMode != "" {
-		a = append(a, hpp.FraudFilterMode)
+	if r.FraudFilterMode != "" {
+		a = append(a, r.FraudFilterMode)
 	}
 
 	return strings.Join(a, Separator)
 }
 
-func (hpp *HPP) basicHash() []string {
-	amount := strconv.Itoa(hpp.Amount)
-	return []string{hpp.timeStampStr(), hpp.MerchantID, hpp.OrderID, amount, hpp.Currency}
+func (r *Request) basicHash() []string {
+	amount := strconv.Itoa(r.Amount)
+	return []string{r.timeStampStr(), r.MerchantID, r.OrderID, amount, r.Currency}
 }
 
-func (hpp *HPP) canStoreCard() bool {
-	if hpp.EnableCardStorage || hpp.SelectStoredCard != "" {
+func (r *Request) canStoreCard() bool {
+	if r.EnableCardStorage || r.SelectStoredCard != "" {
 		return true
 	}
 	return false
 }
 
-func (hpp *HPP) timeStampStr() string {
-	ts := hpp.TimeStamp
+func (r *Request) timeStampStr() string {
+	ts := r.TimeStamp
 	if ts == nil {
 		return ""
 	}

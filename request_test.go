@@ -14,26 +14,26 @@ func TestValidate(t *testing.T) {
 	var tests = []struct {
 		//given
 		description string
-		hpp         HPP
+		request     Request
 
 		//expected
 		err error
 	}{
 		{
 			"Given the merchant ID is missing",
-			HPP{MerchantID: ""},
+			Request{MerchantID: ""},
 
-			fmt.Errorf("MERCHANT_ID: is required."),
+			fmt.Errorf("MERCHANT_ID: is required"),
 		},
 		{
 			"Given the merchant ID is too long",
-			HPP{MerchantID: randomString(51)},
+			Request{MerchantID: randomString(51)},
 
 			fmt.Errorf("MERCHANT_ID: %s", merchantIDSize),
 		},
 		{
 			"Given the merchant ID is incorrect",
-			HPP{MerchantID: "test%"},
+			Request{MerchantID: "test%"},
 
 			fmt.Errorf("MERCHANT_ID: %s", merchantIDPattern),
 		},
@@ -41,7 +41,7 @@ func TestValidate(t *testing.T) {
 
 	for _, test := range tests {
 		// Subject
-		err := test.hpp.Validate()
+		err := test.request.Validate()
 
 		// Assertions
 		if err != nil {
@@ -153,44 +153,44 @@ func TestBuildHash(t *testing.T) {
 	var tests = []struct {
 		//given
 		description string
-		hpp         HPP
+		request     Request
 
 		//expected
 		hash string
 	}{
 		{
 			"Given blank HPP, a valid hash is returned",
-			HPP{},
+			Request{},
 
 			"5ece5764864e9afac4cd0c9560055f7598e3af42",
 		},
 		{
 			"Given basic details the hash is built correctly",
-			testHPP(false, false, false),
+			testRequest(false, false, false),
 
 			"cc72c08e529b3bc153481eda9533b815cef29de3",
 		},
 		{
 			"Given the enable card storage flag, a hash is returned with the payer details",
-			testHPP(true, false, false),
+			testRequest(true, false, false),
 
 			"4106afc4666c6145b623089b1ad4098846badba2",
 		},
 		{
 			"Given the select stored card, a hash is returned with the payer details",
-			testHPP(false, true, false),
+			testRequest(false, true, false),
 
 			"4106afc4666c6145b623089b1ad4098846badba2",
 		},
 		{
 			"Given the fraud filter mode flag, the fraud filter mode is included in the hash",
-			testHPP(false, false, true),
+			testRequest(false, false, true),
 
 			"b7b3cbb60129a1c169a066afa09ce7cc843ff1c1",
 		},
 		{
 			"Given the fraud filter mode flag, and stored card flag",
-			testHPP(true, false, true),
+			testRequest(true, false, true),
 
 			"39f637a321da4ebc3a433ed327b2c2921ad58fdb",
 		},
@@ -198,17 +198,17 @@ func TestBuildHash(t *testing.T) {
 
 	for _, test := range tests {
 		// Subject
-		hash := test.hpp.BuildHash("mysecret")
+		hash := test.request.BuildHash("mysecret")
 
 		// Assertions
 		assert.Equal(t, hash, test.hash, test.description)
 	}
 }
 
-func testHPP(cardStorage, selectStoredCard, fraudFilterMode bool) HPP {
+func testRequest(cardStorage, selectStoredCard, fraudFilterMode bool) Request {
 	timestamp := time.Date(2013, 8, 14, 12, 22, 39, 0, time.UTC)
 
-	hpp := HPP{
+	r := Request{
 		TimeStamp:  &timestamp,
 		MerchantID: "thestore",
 		OrderID:    "ORD453-11",
@@ -217,23 +217,23 @@ func testHPP(cardStorage, selectStoredCard, fraudFilterMode bool) HPP {
 	}
 
 	if cardStorage {
-		hpp.EnableCardStorage = true
+		r.EnableCardStorage = true
 	}
 
 	if selectStoredCard {
-		hpp.SelectStoredCard = "2b8de093-0241-4985-ad96-76ca0b26b478"
+		r.SelectStoredCard = "2b8de093-0241-4985-ad96-76ca0b26b478"
 	}
 
 	if cardStorage || selectStoredCard {
-		hpp.PayerReference = "newpayer1"
-		hpp.PaymentReference = "mycard1"
+		r.PayerReference = "newpayer1"
+		r.PaymentReference = "mycard1"
 	}
 
 	if fraudFilterMode {
-		hpp.FraudFilterMode = "ACTIVE"
+		r.FraudFilterMode = "ACTIVE"
 	}
 
-	return hpp
+	return r
 }
 
 func randomString(n int) string {
