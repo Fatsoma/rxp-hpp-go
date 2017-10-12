@@ -4,148 +4,171 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/asaskevich/govalidator"
+	"github.com/go-ozzo/ozzo-validation"
 )
-
-func init() {
-	govalidator.SetFieldsRequiredByDefault(true)
-}
 
 const (
 	TimeLayout = "20060102150405"
 	Separator  = "."
 )
 
+var (
+	merchantIDRegexp     = regexp.MustCompile("^[a-zA-Z0-9\\.]*$")
+	accountRegexp        = regexp.MustCompile("^[a-zA-Z0-9\\s]*$")
+	orderIDRegexp        = regexp.MustCompile("^[a-zA-Z0-9_\\-]*$*$")
+	numericRegexp        = regexp.MustCompile("^[0-9]*$")
+	alphaRegexp          = regexp.MustCompile("^[a-zA-Z]*$")
+	hexadecimalRegexp    = regexp.MustCompile("^[0-9a-fA-F]+$")
+	autoSettleFlagRegexp = regexp.MustCompile("(?i)^on*|^off$|^*$|^multi$|^1$|^0$")
+)
+
 type HPP struct {
 	// The merchant ID supplied by Realex Payments – note this is not the merchant number supplied by your bank.
-	MerchantID string `json:"MERCHANT_ID" valid:"-"`
+	MerchantID string `json:"MERCHANT_ID"`
 
 	// The sub-account to use for this transaction. If not present, the default sub-account will be used.
-	Account string `json:"ACCOUNT" valid:"-"`
+	Account string `json:"ACCOUNT"`
 
 	// A unique alphanumeric id that’s used to identify the transaction. No spaces are allowed.
-	OrderID string `json:"ORDER_ID" valid:"uuidv4"`
+	OrderID string `json:"ORDER_ID"`
 
 	// Total amount to authorise in the lowest unit of the currency – i.e. 100 euro would be entered as 10000.
 	// If there is no decimal in the currency (e.g. JPY Yen) then contact Realex Payments. No decimal points are allowed.
 	// Amount should be set to 0 for OTB transactions (i.e. where validate card only is set to 1).
-	Amount int `json:"AMOUNT" valid:"int"`
+	Amount int `json:"AMOUNT"`
 
 	// A three-letter currency code (Eg. EUR, GBP). A list of currency codes can be provided by your account manager.
-	Currency string `json:"CURRENCY" valid:"alpha"`
+	Currency string `json:"CURRENCY"`
 
 	// Date and time of the transaction. Entered in the following format: YYYYMMDDHHMMSS. Must be within 24 hours of the current time.
-	TimeStamp *time.Time `json:"TIMESTAMP" valid:"-"`
+	TimeStamp *time.Time `json:"TIMESTAMP"`
 
 	// A digital signature generated using the SHA-1 algorithm.
-	Hash string `json:"SHA1HASH" valid:"-"`
+	Hash string `json:"SHA1HASH"`
 
 	// Used to signify whether or not you wish the transaction to be captured in the next batch.
 	// If set to "1" and assuming the transaction is authorised then it will automatically be settled in the next batch.
 	// If set to "0" then the merchant must use the RealControl application to manually settle the transaction.
 	// This option can be used if a merchant wishes to delay the payment until after the goods have been shipped.
 	// Transactions can be settled for up to 115% of the original amount and must be settled within a certain period of time agreed with your issuing bank.
-	AutoSettleFlag ConvertibleBoolean `json:"AUTO_SETTLE_FLAG" valid:"int"`
+	AutoSettleFlag ConvertibleBoolean `json:"AUTO_SETTLE_FLAG"`
 
 	// A freeform comment to describe the transaction.
-	CommentOne string `json:"COMMENT1" valid:"-"`
+	CommentOne string `json:"COMMENT1"`
 
 	// A freeform comment to describe the transaction.
-	CommentTwo string `json:"COMMENT2" valid:"-"`
+	CommentTwo string `json:"COMMENT2"`
 
 	// Used to signify whether or not you want a Transaction Suitability Score for this transaction.
 	// Can be "0" for no and "1" for yes.
-	ReturnTSS string `json:"RETURN_TSS" valid:"-"`
+	ReturnTSS string `json:"RETURN_TSS"`
 
 	// The postcode or ZIP of the shipping address.
-	ShippingCode string `json:"SHIPPING_CODE" valid:"-"`
+	ShippingCode string `json:"SHIPPING_CODE"`
 
 	// The country of the shipping address.
-	ShippingCountry string `json:"SHIPPING_CO" valid:"-"`
+	ShippingCountry string `json:"SHIPPING_CO"`
 
 	// The postcode or ZIP of the billing address.
-	BillingCode string `json:"BILLING_CODE" valid:"-"`
+	BillingCode string `json:"BILLING_CODE"`
 
 	// The country of the billing address.
-	BillingCountry string `json:"BILLING_CO" valid:"-"`
+	BillingCountry string `json:"BILLING_CO"`
 
 	// The customer number of the customer. You can send in any additional information about the transaction in this field,
 	// which will be visible under the transaction in the RealControl application.
-	CustomerNumber string `json:"CUST_NUM" valid:"-"`
+	CustomerNumber string `json:"CUST_NUM"`
 
 	// A variable reference also associated with this customer. You can send in any additional information about the transaction in this field,
 	// which will be visible under the transaction in the RealControl application.
-	VariableReference string `json:"VAR_REF" valid:"-"`
+	VariableReference string `json:"VAR_REF"`
 
 	// A product id associated with this product. You can send in any additional information about the transaction in this field,
 	// which will be visible under the transaction in the RealControl application.
-	ProductID string `json:"PROD_ID" valid:"-"`
+	ProductID string `json:"PROD_ID"`
 
 	// Used to set what language HPP is displayed in. Currently HPP is available in English, Spanish and German, with other languages to follow.
 	// If the field is not sent in, the default language is the language that is set in your account configuration. This can be set by your account manager.
-	Language string `json:"HPP_LANG" valid:"-"`
+	Language string `json:"HPP_LANG"`
 
 	// Used to set what text is displayed on the payment button for card transactions. If this field is not sent in, "Pay Now" is displayed on the button by default.
-	CardPaymentButton string `json:"CARD_PAYMENT_BUTTON" valid:"-"`
+	CardPaymentButton string `json:"CARD_PAYMENT_BUTTON"`
 
 	// Enable card storage.
-	EnableCardStorage ConvertibleBoolean `json:"CARD_STORAGE_ENABLE" valid:"-"`
+	EnableCardStorage ConvertibleBoolean `json:"CARD_STORAGE_ENABLE"`
 
 	// Offer to save the card.
-	OfferSaveCard ConvertibleBoolean `json:"OFFER_SAVE_CARD" valid:"-"`
+	OfferSaveCard ConvertibleBoolean `json:"OFFER_SAVE_CARD"`
 
 	// The payer reference.
-	PayerReference string `json:"PAYER_REF" valid:"-"`
+	PayerReference string `json:"PAYER_REF"`
 
 	// The payment reference.
-	PaymentReference string `json:"PMT_REF" valid:"-"`
+	PaymentReference string `json:"PMT_REF"`
 
 	// Payer exists.
-	PayerExists ConvertibleBoolean `json:"PAYER_EXIST" valid:"-"`
+	PayerExists ConvertibleBoolean `json:"PAYER_EXIST"`
 
 	// Used to identify an OTB transaction.
-	ValidCardOnly ConvertibleBoolean `json:"VALIDATE_CARD_ONLY" valid:"-"`
+	ValidCardOnly ConvertibleBoolean `json:"VALIDATE_CARD_ONLY"`
 
 	// Transaction level configuration to enable/disable a DCC request. (Only if the merchant is configured).
-	DCCEnable ConvertibleBoolean `json:"DCC_ENABLE" valid:"-"`
+	DCCEnable ConvertibleBoolean `json:"DCC_ENABLE"`
 
 	// Override merchant configuration for fraud. (Only if the merchant is configured for fraud).
-	FraudFilterMode string `json:"HPP_FRAUDFILTER_MODE" valid:"-"`
+	FraudFilterMode string `json:"HPP_FRAUDFILTER_MODE"`
 
 	// The HPP Version. To use HPP Card Management select HPP_VERSION = 2.
-	Version string `json:"HPP_VERSION" valid:"-"`
+	Version string `json:"HPP_VERSION"`
 
 	// The payer reference. If this flag is received, HPP will retrieve a list of the payment methods saved for that payer.
-	SelectStoredCard string `json:"HPP_SELECT_STORED_CARD" valid:"-"`
+	SelectStoredCard string `json:"HPP_SELECT_STORED_CARD"`
 }
 
-// ConvertibleBoolean is a boolean that represents "1" and "0" as true / false
-type ConvertibleBoolean bool
-
-// MarshalJSON converts bools to "1" / "0"
-func (b *ConvertibleBoolean) MarshalJSON() ([]byte, error) {
-	if *b {
-		return json.Marshal("1")
-	}
-
-	return json.Marshal("0")
-}
-
-// UnmarshalJSON converts "1" / "0" to bool
-func (b *ConvertibleBoolean) UnmarshalJSON(data []byte) error {
-	s := string(data)
-	if s == "1" || s == "true" {
-		*b = true
-	} else if s == "0" || s == "false" {
-		*b = false
-	} else {
-		return fmt.Errorf("Boolean unmarshal error: invalid input %s", s)
-	}
-	return nil
+// Validate the HPP request fields
+func (hpp *HPP) Validate() error {
+	return validation.ValidateStruct(hpp,
+		validation.Field(
+			&hpp.MerchantID,
+			validation.Required.Error("is required"),
+			validation.Length(1, 50).Error(merchantIDSize),
+			validation.Match(merchantIDRegexp).Error(merchantIDPattern),
+		),
+		validation.Field(
+			&hpp.Account,
+			validation.Length(0, 30).Error(accountSize),
+			validation.Match(accountRegexp).Error(accountPattern),
+		),
+		validation.Field(
+			&hpp.OrderID,
+			validation.Length(0, 50).Error(orderIDSize),
+			validation.Match(orderIDRegexp).Error(orderIDPattern),
+		),
+		validation.Field(
+			&hpp.Amount,
+			validation.Length(1, 11).Error(amountSize),
+			validation.Match(numericRegexp).Error(amountPattern),
+		),
+		validation.Field(
+			&hpp.Currency,
+			validation.Length(3, 3).Error(currencySize),
+			validation.Match(alphaRegexp).Error(currencyPattern),
+		),
+		validation.Field(
+			&hpp.Hash,
+			validation.Length(40, 40).Error(hashSize),
+			validation.Match(hexadecimalRegexp).Error(hashPattern),
+		),
+		validation.Field(
+			&hpp.Hash,
+			validation.Match(autoSettleFlagRegexp).Error(autoSettleFlagPattern),
+		),
+	)
 }
 
 // BuildHash - Each message sent to Realex should have a hash, attached. For a message using the remote
@@ -235,4 +258,29 @@ func (hpp *HPP) timeStampStr() string {
 		return ""
 	}
 	return ts.Format(TimeLayout)
+}
+
+// ConvertibleBoolean is a boolean that represents "1" and "0" as true / false
+type ConvertibleBoolean bool
+
+// MarshalJSON converts bools to "1" / "0"
+func (b *ConvertibleBoolean) MarshalJSON() ([]byte, error) {
+	if *b {
+		return json.Marshal("1")
+	}
+
+	return json.Marshal("0")
+}
+
+// UnmarshalJSON converts "1" / "0" to bool
+func (b *ConvertibleBoolean) UnmarshalJSON(data []byte) error {
+	s := string(data)
+	if s == "1" || s == "true" {
+		*b = true
+	} else if s == "0" || s == "false" {
+		*b = false
+	} else {
+		return fmt.Errorf("Boolean unmarshal error: invalid input %s", s)
+	}
+	return nil
 }

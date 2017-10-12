@@ -1,0 +1,20 @@
+hash: 30145034b358dff02a6475e02263c8b78e536966c840db9067dc5fb8224bb2f9
+updated: 2017-10-12T15:35:43.552969945+01:00
+imports:
+- name: github.com/go-ozzo/ozzo-validation
+  version: 85dcd8368eba387e65a03488b003e233994e87e9
+  subpackages:
+  - is
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert

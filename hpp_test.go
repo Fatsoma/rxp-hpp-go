@@ -2,11 +2,56 @@ package hpp
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestValidate(t *testing.T) {
+	var tests = []struct {
+		//given
+		description string
+		hpp         HPP
+
+		//expected
+		err error
+	}{
+		{
+			"Given the merchant ID is missing",
+			HPP{MerchantID: ""},
+
+			fmt.Errorf("MERCHANT_ID: is required."),
+		},
+		{
+			"Given the merchant ID is too long",
+			HPP{MerchantID: randomString(51)},
+
+			fmt.Errorf("MERCHANT_ID: %s", merchantIDSize),
+		},
+		{
+			"Given the merchant ID is incorrect",
+			HPP{MerchantID: "test%"},
+
+			fmt.Errorf("MERCHANT_ID: %s", merchantIDPattern),
+		},
+	}
+
+	for _, test := range tests {
+		// Subject
+		err := test.hpp.Validate()
+
+		// Assertions
+		if err != nil {
+			_ = assert.NotNil(t, test.err, test.description) &&
+				assert.Contains(t, err.Error(), test.err.Error(), test.description)
+		} else {
+			assert.Nil(t, test.err, test.description)
+		}
+	}
+}
 
 func TestConvertableBoolMarshalJSON(t *testing.T) {
 	var tests = []struct {
@@ -105,16 +150,6 @@ func TestConvertableBoolUnmarshalJSON(t *testing.T) {
 }
 
 func TestBuildHash(t *testing.T) {
-	timestamp := time.Date(2013, 8, 14, 12, 22, 39, 0, time.UTC)
-	merchantID := "thestore"
-	orderID := "ORD453-11"
-	amount := 29900
-	currency := "EUR"
-	payerRef := "newpayer1"
-	paymentRef := "mycard1"
-	fraudFilterMode := "ACTIVE"
-	selectStoredCard := "2b8de093-0241-4985-ad96-76ca0b26b478"
-
 	var tests = []struct {
 		//given
 		description string
@@ -131,72 +166,31 @@ func TestBuildHash(t *testing.T) {
 		},
 		{
 			"Given basic details the hash is built correctly",
-			HPP{
-				TimeStamp:  &timestamp,
-				MerchantID: merchantID,
-				OrderID:    orderID,
-				Amount:     amount,
-				Currency:   currency,
-			},
+			testHPP(false, false, false),
 
 			"cc72c08e529b3bc153481eda9533b815cef29de3",
 		},
 		{
 			"Given the enable card storage flag, a hash is returned with the payer details",
-			HPP{
-				EnableCardStorage: true,
-				TimeStamp:         &timestamp,
-				MerchantID:        merchantID,
-				OrderID:           orderID,
-				Amount:            amount,
-				Currency:          currency,
-				PayerReference:    payerRef,
-				PaymentReference:  paymentRef,
-			},
+			testHPP(true, false, false),
 
 			"4106afc4666c6145b623089b1ad4098846badba2",
 		},
 		{
 			"Given the select stored card, a hash is returned with the payer details",
-			HPP{
-				SelectStoredCard: selectStoredCard,
-				TimeStamp:        &timestamp,
-				MerchantID:       merchantID,
-				OrderID:          orderID,
-				Amount:           amount,
-				Currency:         currency,
-				PayerReference:   payerRef,
-				PaymentReference: paymentRef,
-			},
+			testHPP(false, true, false),
 
 			"4106afc4666c6145b623089b1ad4098846badba2",
 		},
 		{
 			"Given the fraud filter mode flag, the fraud filter mode is included in the hash",
-			HPP{
-				TimeStamp:       &timestamp,
-				MerchantID:      merchantID,
-				OrderID:         orderID,
-				Amount:          amount,
-				Currency:        currency,
-				FraudFilterMode: fraudFilterMode,
-			},
+			testHPP(false, false, true),
 
 			"b7b3cbb60129a1c169a066afa09ce7cc843ff1c1",
 		},
 		{
-			"Given the fraud filter mode flag, and stored card",
-			HPP{
-				EnableCardStorage: true,
-				TimeStamp:         &timestamp,
-				MerchantID:        merchantID,
-				OrderID:           orderID,
-				Amount:            amount,
-				Currency:          currency,
-				PayerReference:    payerRef,
-				PaymentReference:  paymentRef,
-				FraudFilterMode:   fraudFilterMode,
-			},
+			"Given the fraud filter mode flag, and stored card flag",
+			testHPP(true, false, true),
 
 			"39f637a321da4ebc3a433ed327b2c2921ad58fdb",
 		},
@@ -209,4 +203,45 @@ func TestBuildHash(t *testing.T) {
 		// Assertions
 		assert.Equal(t, hash, test.hash, test.description)
 	}
+}
+
+func testHPP(cardStorage, selectStoredCard, fraudFilterMode bool) HPP {
+	timestamp := time.Date(2013, 8, 14, 12, 22, 39, 0, time.UTC)
+
+	hpp := HPP{
+		TimeStamp:  &timestamp,
+		MerchantID: "thestore",
+		OrderID:    "ORD453-11",
+		Amount:     29900,
+		Currency:   "EUR",
+	}
+
+	if cardStorage {
+		hpp.EnableCardStorage = true
+	}
+
+	if selectStoredCard {
+		hpp.SelectStoredCard = "2b8de093-0241-4985-ad96-76ca0b26b478"
+	}
+
+	if cardStorage || selectStoredCard {
+		hpp.PayerReference = "newpayer1"
+		hpp.PaymentReference = "mycard1"
+	}
+
+	if fraudFilterMode {
+		hpp.FraudFilterMode = "ACTIVE"
+	}
+
+	return hpp
+}
+
+func randomString(n int) string {
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-")
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
