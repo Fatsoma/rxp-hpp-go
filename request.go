@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -15,16 +14,6 @@ import (
 const (
 	TimeLayout = "20060102150405"
 	Separator  = "."
-)
-
-var (
-	merchantIDRegexp     = regexp.MustCompile("^[a-zA-Z0-9\\.]*$")
-	accountRegexp        = regexp.MustCompile("^[a-zA-Z0-9\\s]*$")
-	orderIDRegexp        = regexp.MustCompile("^[a-zA-Z0-9_\\-]*$*$")
-	numericRegexp        = regexp.MustCompile("^[0-9]*$")
-	alphaRegexp          = regexp.MustCompile("^[a-zA-Z]*$")
-	hexadecimalRegexp    = regexp.MustCompile("^[0-9a-fA-F]+$")
-	autoSettleFlagRegexp = regexp.MustCompile("(?i)^on*|^off$|^*$|^multi$|^1$|^0$")
 )
 
 type Request struct {
@@ -133,41 +122,32 @@ type Request struct {
 // Validate the HPP request fields
 func (r *Request) Validate() error {
 	return validation.ValidateStruct(r,
-		validation.Field(
-			&r.MerchantID,
-			validation.Required.Error("is required"),
-			validation.Length(1, 50).Error(merchantIDSize),
-			validation.Match(merchantIDRegexp).Error(merchantIDPattern),
-		),
-		validation.Field(
-			&r.Account,
-			validation.Length(0, 30).Error(accountSize),
-			validation.Match(accountRegexp).Error(accountPattern),
-		),
-		validation.Field(
-			&r.OrderID,
-			validation.Length(0, 50).Error(orderIDSize),
-			validation.Match(orderIDRegexp).Error(orderIDPattern),
-		),
-		validation.Field(
-			&r.Amount,
-			validation.Length(1, 11).Error(amountSize),
-			validation.Match(numericRegexp).Error(amountPattern),
-		),
-		validation.Field(
-			&r.Currency,
-			validation.Length(3, 3).Error(currencySize),
-			validation.Match(alphaRegexp).Error(currencyPattern),
-		),
-		validation.Field(
-			&r.Hash,
-			validation.Length(40, 40).Error(hashSize),
-			validation.Match(hexadecimalRegexp).Error(hashPattern),
-		),
-		validation.Field(
-			&r.Hash,
-			validation.Match(autoSettleFlagRegexp).Error(autoSettleFlagPattern),
-		),
+		validateMerchantID(&r.MerchantID),
+		validateAccount(&r.Account),
+		validateOrderID(&r.OrderID),
+		validateAmount(&r.Amount),
+		validateCurrency(&r.Currency),
+		validateHash(&r.Hash),
+		validateAutoSettleFlag(&r.AutoSettleFlag),
+		validateComment(&r.CommentOne),
+		validateComment(&r.CommentTwo),
+		validateReturnTss(&r.ReturnTSS),
+		validateShippingCode(&r.ShippingCode),
+		validateShippingCountry(&r.ShippingCountry),
+		validateBillingCode(&r.BillingCode),
+		validateBillingCountry(&r.BillingCountry),
+		validateCustomerNumber(&r.CustomerNumber),
+		validateVariableReference(&r.VariableReference),
+		validateProductID(&r.ProductID),
+		validateLanguage(&r.Language),
+		validateCardPaymentButton(&r.CardPaymentButton),
+		validateEnableCardStorage(&r.EnableCardStorage),
+		validateOfferSaveCard(&r.OfferSaveCard),
+		validatePayerReference(&r.PayerReference),
+		validatePaymentReference(&r.PaymentReference),
+		validatePayerExists(&r.PayerExists),
+		validateValidCardOnly(&r.ValidCardOnly),
+		validateDCCEnable(&r.DCCEnable),
 	)
 }
 
