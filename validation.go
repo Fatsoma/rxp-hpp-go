@@ -277,9 +277,10 @@ func validatePaymentReference(paymentReference *string) *validation.FieldRules {
 	)
 }
 
-func validatePayerExists(payerExists *ConvertibleBoolean) *validation.FieldRules {
+func validatePayerExists(payerExists *string) *validation.FieldRules {
 	return validation.Field(
 		payerExists,
+		validation.Length(1, 1).Error(payerExistsSize),
 		validation.Match(payerExistsRegexp).Error(payerExistsPattern),
 	)
 }
