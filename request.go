@@ -36,7 +36,7 @@ type Request struct {
 	// If set to "0" then the merchant must use the RealControl application to manually settle the transaction.
 	// This option can be used if a merchant wishes to delay the payment until after the goods have been shipped.
 	// Transactions can be settled for up to 115% of the original amount and must be settled within a certain period of time agreed with your issuing bank.
-	AutoSettleFlag ConvertibleBoolean `json:"AUTO_SETTLE_FLAG"`
+	AutoSettleFlag JSONBool `json:"AUTO_SETTLE_FLAG"`
 
 	// A freeform comment to describe the transaction.
 	CommentOne string `json:"COMMENT1"`
@@ -80,10 +80,10 @@ type Request struct {
 	CardPaymentButton string `json:"CARD_PAYMENT_BUTTON"`
 
 	// Enable card storage.
-	EnableCardStorage ConvertibleBoolean `json:"CARD_STORAGE_ENABLE"`
+	EnableCardStorage JSONBool `json:"CARD_STORAGE_ENABLE"`
 
 	// Offer to save the card.
-	OfferSaveCard ConvertibleBoolean `json:"OFFER_SAVE_CARD"`
+	OfferSaveCard JSONBool `json:"OFFER_SAVE_CARD"`
 
 	// The payer reference.
 	PayerReference string `json:"PAYER_REF"`
@@ -95,10 +95,10 @@ type Request struct {
 	PayerExists string `json:"PAYER_EXIST"`
 
 	// Used to identify an OTB transaction.
-	ValidCardOnly ConvertibleBoolean `json:"VALIDATE_CARD_ONLY"`
+	ValidCardOnly JSONBool `json:"VALIDATE_CARD_ONLY"`
 
 	// Transaction level configuration to enable/disable a DCC request. (Only if the merchant is configured).
-	DCCEnable ConvertibleBoolean `json:"DCC_ENABLE"`
+	DCCEnable JSONBool `json:"DCC_ENABLE"`
 
 	// Override merchant configuration for fraud. (Only if the merchant is configured for fraud).
 	FraudFilterMode string `json:"HPP_FRAUDFILTER_MODE"`

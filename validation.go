@@ -154,7 +154,7 @@ func validateHash(hash *string) *validation.FieldRules {
 	)
 }
 
-func validateAutoSettleFlag(autoSettle *ConvertibleBoolean) *validation.FieldRules {
+func validateAutoSettleFlag(autoSettle *JSONBool) *validation.FieldRules {
 	return validation.Field(
 		autoSettle,
 		validation.Match(autoSettleFlagRegexp).Error(autoSettleFlagPattern),
@@ -247,14 +247,14 @@ func validateCardPaymentButton(cardPaymentButton *string) *validation.FieldRules
 	)
 }
 
-func validateEnableCardStorage(enableCardStorage *ConvertibleBoolean) *validation.FieldRules {
+func validateEnableCardStorage(enableCardStorage *JSONBool) *validation.FieldRules {
 	return validation.Field(
 		enableCardStorage,
 		validation.Match(boolRegexp).Error(cardStorageEnablePattern),
 	)
 }
 
-func validateOfferSaveCard(offerSaveCard *ConvertibleBoolean) *validation.FieldRules {
+func validateOfferSaveCard(offerSaveCard *JSONBool) *validation.FieldRules {
 	return validation.Field(
 		offerSaveCard,
 		validation.Match(boolRegexp).Error(offerSaveCardPattern),
@@ -285,14 +285,14 @@ func validatePayerExists(payerExists *string) *validation.FieldRules {
 	)
 }
 
-func validateValidCardOnly(validCardOnly *ConvertibleBoolean) *validation.FieldRules {
+func validateValidCardOnly(validCardOnly *JSONBool) *validation.FieldRules {
 	return validation.Field(
 		validCardOnly,
 		validation.Match(boolRegexp).Error(validateCardOnlyPattern),
 	)
 }
 
-func validateDCCEnable(DCCEnable *ConvertibleBoolean) *validation.FieldRules {
+func validateDCCEnable(DCCEnable *JSONBool) *validation.FieldRules {
 	return validation.Field(
 		DCCEnable,
 		validation.Match(boolRegexp).Error(dccEnablePattern),
