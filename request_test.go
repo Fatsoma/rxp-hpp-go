@@ -44,9 +44,8 @@ func TestValidate(t *testing.T) {
 		err := test.request.Validate()
 
 		// Assertions
-		if err != nil {
-			_ = assert.NotNil(t, test.err, test.description) &&
-				assert.Contains(t, err.Error(), test.err.Error(), test.description)
+		if err != nil && assert.NotNil(t, test.err, test.description) {
+			assert.Contains(t, err.Error(), test.err.Error(), test.description)
 		} else {
 			assert.Nil(t, test.err, test.description)
 		}
@@ -140,8 +139,9 @@ func TestConvertableBoolUnmarshalJSON(t *testing.T) {
 
 		// Assertions
 		if err != nil {
-			_ = assert.NotNil(t, test.err, test.description) &&
+			if assert.NotNil(t, test.err, test.description) {
 				assert.Equal(t, test.err, err, test.description)
+			}
 		} else {
 			assert.Nil(t, err, test.description)
 			assert.Equal(t, test.expected, bool(cb), test.description)
@@ -207,9 +207,10 @@ func TestBuildHash(t *testing.T) {
 
 func testRequest(cardStorage, selectStoredCard, fraudFilterMode bool) Request {
 	timestamp := time.Date(2013, 8, 14, 12, 22, 39, 0, time.UTC)
+	t := JSONTime(timestamp)
 
 	r := Request{
-		TimeStamp:  &timestamp,
+		TimeStamp:  &t,
 		MerchantID: "thestore",
 		OrderID:    "ORD453-11",
 		Amount:     29900,
