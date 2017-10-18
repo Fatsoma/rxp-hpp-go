@@ -13,7 +13,7 @@ func TestJSONTimeString(t *testing.T) {
 	jt := JSONTime(timestamp)
 	jsonTime := jt.String()
 
-	assert.Equal(t, "20130814122239", jsonTime, "json should match")
+	assert.Equal(t, "20130814122239", jsonTime, "json time should match")
 }
 
 func TestJSONTimeMarshalJSON(t *testing.T) {
@@ -21,7 +21,12 @@ func TestJSONTimeMarshalJSON(t *testing.T) {
 	jt := JSONTime(timestamp)
 	json, err := jt.MarshalJSON()
 
-	assert.Equal(t, []byte("20130814122239"), json, "json should match")
+	assert.Equal(
+		t,
+		[]byte(`"MjAxMzA4MTQxMjIyMzk="`),
+		json,
+		"json time should match encoded",
+	)
 	assert.Nil(t, err, "no error is presnet")
 }
 

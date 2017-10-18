@@ -1,6 +1,7 @@
 package hpp
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 )
@@ -10,11 +11,13 @@ type JSONBool bool
 
 // MarshalJSON converts bools to "1" / "0"
 func (b *JSONBool) MarshalJSON() ([]byte, error) {
+	result := []byte("0")
 	if *b {
-		return json.Marshal("1")
+		result = []byte("1")
 	}
 
-	return json.Marshal("0")
+	es := base64.StdEncoding.EncodeToString(result)
+	return json.Marshal(es)
 }
 
 // UnmarshalJSON converts "1" / "0" to bool
