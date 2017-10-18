@@ -7,9 +7,26 @@ import (
 )
 
 const (
-	TimeLayout = "20060102150405"
-	Separator  = "."
+	TimeLayout      = "20060102150405"
+	Separator       = "."
+	EncodingCharset = "UTF-8"
 )
+
+type HPP struct {
+	Secret string
+}
+
+func New(s string) HPP {
+	return HPP{Secret: s}
+}
+
+func (hpp *HPP) Request() Request {
+	return Request{hpp: hpp}
+}
+
+func (hpp *HPP) Response() Response {
+	return Response{hpp: hpp}
+}
 
 // GenerateHash ...
 // Each message sent to Realex should have a hash, attached. For a message using the remote
