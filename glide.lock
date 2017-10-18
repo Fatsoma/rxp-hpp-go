@@ -1,10 +1,14 @@
-hash: 30145034b358dff02a6475e02263c8b78e536966c840db9067dc5fb8224bb2f9
-updated: 2017-10-12T15:35:43.552969945+01:00
+hash: bf3e101bd4a1a36aec85d28a3e120a83a9ad0c17b39582b4b6e4e7e1aea6b7fa
+updated: 2017-10-16T23:12:36.86287405+01:00
 imports:
 - name: github.com/go-ozzo/ozzo-validation
   version: 85dcd8368eba387e65a03488b003e233994e87e9
   subpackages:
   - is
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
