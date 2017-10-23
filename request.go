@@ -45,7 +45,7 @@ type Request struct {
 	// If set to "0" then the merchant must use the RealControl application to manually settle the transaction.
 	// This option can be used if a merchant wishes to delay the payment until after the goods have been shipped.
 	// Transactions can be settled for up to 115% of the original amount and must be settled within a certain period of time agreed with your issuing bank.
-	AutoSettleFlag JSONBool `json:"AUTO_SETTLE_FLAG,omitempty"`
+	AutoSettleFlag string `json:"AUTO_SETTLE_FLAG,omitempty"`
 
 	// A freeform comment to describe the transaction.
 	CommentOne string `json:"COMMENT1,omitempty"`
@@ -55,7 +55,7 @@ type Request struct {
 
 	// Used to signify whether or not you want a Transaction Suitability Score for this transaction.
 	// Can be "0" for no and "1" for yes.
-	ReturnTSS string `json:"RETURN_TSS,omitempty"`
+	ReturnTSS JSONBool `json:"RETURN_TSS"`
 
 	// The postcode or ZIP of the shipping address.
 	ShippingCode string `json:"SHIPPING_CODE,omitempty"`
@@ -129,28 +129,28 @@ func (r *Request) ToJSON() (json.RawMessage, error) {
 	fmt.Println("Converting HppRequest to JSON.")
 
 	fmt.Println("Generating defaults.")
-	r.generateDefaults()
+	r.GenerateDefaults()
 
 	r.BuildHash(r.hpp.Secret)
 
 	fmt.Println("Validating request.")
-
 	err := r.Validate()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate HPP request")
 	}
 
-	return r.MarshalJSONEncoded()
+	return MarshalJSONEncoded(r)
 }
 
-func (r *Request) generateDefaults() {
+// GenerateDefaults sets the timestamp and order ID if they aren't already set
+func (r *Request) GenerateDefaults() {
 	if r.TimeStamp == nil {
 		now := JSONTime(time.Now())
 		r.TimeStamp = &now
 	}
 
 	if r.OrderID == "" {
-		r.OrderID = string(uuid.NewV4().Bytes())
+		r.OrderID = uuid.NewV4().String()
 	}
 }
 
@@ -163,9 +163,9 @@ func (r *Request) Validate() error {
 		validateAmount(&r.Amount),
 		validateCurrency(&r.Currency),
 		validateHash(&r.Hash),
+		validateAutoSettleFlag(&r.AutoSettleFlag),
 		validateComment(&r.CommentOne),
 		validateComment(&r.CommentTwo),
-		validateReturnTss(&r.ReturnTSS),
 		validateShippingCode(&r.ShippingCode),
 		validateShippingCountry(&r.ShippingCountry),
 		validateBillingCode(&r.BillingCode),
@@ -217,7 +217,7 @@ func (r *Request) canStoreCard() bool {
 }
 
 // MarshalJSONEncoded marshals the request and Base64 encodes the values
-func (r *Request) MarshalJSONEncoded() (json.RawMessage, error) {
+func MarshalJSONEncoded(r interface{}) (json.RawMessage, error) {
 	js, err := json.Marshal(r)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal HPP request")
@@ -233,10 +233,5 @@ func (r *Request) MarshalJSONEncoded() (json.RawMessage, error) {
 		encoded[k] = base64.StdEncoding.EncodeToString([]byte(v))
 	}
 
-	ejs, err := json.Marshal(encoded)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal encoded HPP json")
-	}
-
-	return ejs, nil
+	return json.Marshal(encoded)
 }

@@ -27,7 +27,7 @@ func TestRequestToJSON(t *testing.T) {
 		Amount:            100,
 		CommentOne:        `a-z A-Z 0-9 ' ", + “” ._ - & \ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥`,
 		CommentTwo:        `Comment Two`,
-		ReturnTSS:         "0",
+		ReturnTSS:         false,
 		ShippingCode:      "56|987",
 		ShippingCountry:   "IRELAND",
 		BillingCode:       "123|56",
@@ -37,7 +37,7 @@ func TestRequestToJSON(t *testing.T) {
 		ProductID:         "ProductID",
 		Language:          "EN",
 		CardPaymentButton: "Submit Payment",
-		AutoSettleFlag:    true,
+		AutoSettleFlag:    "1",
 		EnableCardStorage: false,
 		OfferSaveCard:     false,
 		PayerReference:    "PayerRef",
@@ -46,10 +46,6 @@ func TestRequestToJSON(t *testing.T) {
 		ValidCardOnly:     false,
 		DCCEnable:         false,
 	}
-
-	reqWithoutDefaults := req
-	reqWithoutDefaults.TimeStamp = nil
-	reqWithoutDefaults.OrderID = ""
 
 	var tests = []struct {
 		//given
@@ -67,13 +63,13 @@ func TestRequestToJSON(t *testing.T) {
 			readSampleJSON("hpp-request-encoded-valid"),
 			nil,
 		},
-		// {
-		// 	"Given a blank request",
-		// 	reqWithoutDefaults,
-		//
-		// 	readSampleJSON("hpp-request-encoded-valid"),
-		// 	nil,
-		// },
+		{
+			"Given an invalid request",
+			Request{hpp: &hpp, Amount: 100, MerchantID: "test", OrderID: "test%"},
+
+			nil,
+			fmt.Errorf("failed to validate HPP request: ORDER_ID: Order ID must only contain alphanumeric characters, dash and underscore."),
+		},
 	}
 
 	for _, test := range tests {
@@ -93,6 +89,16 @@ func TestRequestToJSON(t *testing.T) {
 	}
 }
 
+func TestGenerateDefaults(t *testing.T) {
+	req := Request{}
+	req.GenerateDefaults()
+
+	assert.NotNil(t, req.TimeStamp)
+
+	assert.NotNil(t, req.OrderID)
+	assert.Len(t, req.OrderID, 36)
+}
+
 func TestValidate(t *testing.T) {
 	var tests = []struct {
 		//given
@@ -103,19 +109,60 @@ func TestValidate(t *testing.T) {
 		err error
 	}{
 		{
-			"Given the merchant ID is missing",
-			Request{MerchantID: ""},
+			"Given the required attributes are missing",
+			Request{},
 
-			fmt.Errorf("MERCHANT_ID: is required"),
+			fmt.Errorf("AMOUNT: is required; MERCHANT_ID: is required"),
 		},
 		{
-			"Given the merchant ID is too long",
-			Request{MerchantID: randomString(51)},
+			"Given the request attributes are too long",
+			Request{
+				Amount:            1,
+				MerchantID:        randomString(51),
+				Account:           randomString(31),
+				OrderID:           randomString(51),
+				Hash:              randomString(41),
+				CommentOne:        randomString(256),
+				CommentTwo:        randomString(256),
+				ShippingCode:      randomString(31),
+				ShippingCountry:   randomString(51),
+				BillingCode:       randomString(61),
+				BillingCountry:    randomString(51),
+				CustomerNumber:    randomString(51),
+				VariableReference: randomString(51),
+				ProductID:         randomString(51),
+				CardPaymentButton: randomString(26),
+				PayerReference:    randomString(51),
+				PaymentReference:  randomString(51),
+				PayerExists:       randomString(2),
+			},
 
-			fmt.Errorf("MERCHANT_ID: %s", merchantIDSize),
+			fmt.Errorf(
+				"ACCOUNT: %s; BILLING_CO: %s; BILLING_CODE: %s; CARD_PAYMENT_BUTTON: %s; "+
+					"COMMENT1: %s; COMMENT2: %s; CUST_NUM: %s; MERCHANT_ID: %s; ORDER_ID: %s; "+
+					"PAYER_EXIST: %s; PAYER_REF: %s; PMT_REF: %s; PROD_ID: %s; SHA1HASH: %s; "+
+					"SHIPPING_CO: %s; SHIPPING_CODE: %s; VAR_REF: %s",
+				accountSize,
+				billingCountrySize,
+				billingCodeSize,
+				cardPaymentButtonTextSize,
+				commentSize,
+				commentSize,
+				customerNumberSize,
+				merchantIDSize,
+				orderIDSize,
+				payerExistsSize,
+				payerReferenceSize,
+				paymentReferenceSize,
+				productIDSize,
+				hashSize,
+				shippingCountrySize,
+				shippingCodeSize,
+				variableReferenceSize,
+			),
 		},
 		{
-			"Given the merchant ID is incorrect",
+			"Given attributes that do not match their regexp patterns",
 			Request{MerchantID: "test%"},
 
 			fmt.Errorf("MERCHANT_ID: %s", merchantIDPattern),
@@ -189,6 +236,52 @@ func TestBuildHash(t *testing.T) {
 
 		// Assertions
 		assert.Equal(t, r.Hash, test.hash, test.description)
+	}
+}
+
+func TestMarshalJSONEncoded(t *testing.T) {
+	type TestStruct struct {
+		Test bool `json:"TEST"`
+	}
+
+	testReq := testRequest(true, true, true)
+
+	var tests = []struct {
+		//given
+		description string
+		request     interface{}
+
+		//expected
+		err error
+	}{
+		{
+			"Given valid request",
+			&testReq,
+
+			nil,
+		},
+		{
+			"Given a structure that cannot be marshalled",
+			func() {},
+
+			fmt.Errorf("failed to marshal HPP request: json: unsupported type: func()"),
+		},
+		{
+			"Given a type that cannot be encoded",
+			TestStruct{},
+
+			fmt.Errorf("failed to unmarshal HPP request json: json: cannot unmarshal bool into Go value of type string"),
+		},
+	}
+
+	for _, test := range tests {
+		_, err := MarshalJSONEncoded(test.request)
+
+		if err != nil && assert.NotNil(t, test.err, test.description) {
+			assert.EqualError(t, err, test.err.Error())
+		} else {
+			assert.Nil(t, test.err)
+		}
 	}
 }
 
