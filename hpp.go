@@ -6,24 +6,25 @@ import (
 	"strings"
 )
 
-const (
-	TimeLayout      = "20060102150405"
-	Separator       = "."
-	EncodingCharset = "UTF-8"
-)
+// Separator used in generating sha1 hashes
+const Separator = "."
 
+// HPP container that we pass to requests / responses
 type HPP struct {
 	Secret string
 }
 
+// New builds a new HPP
 func New(s string) HPP {
 	return HPP{Secret: s}
 }
 
+// Request initialise a new request with this HPP set
 func (hpp *HPP) Request() Request {
 	return Request{hpp: hpp}
 }
 
+// Response initialise a new request with this HPP set
 func (hpp *HPP) Response() Response {
 	return Response{hpp: hpp}
 }

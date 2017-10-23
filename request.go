@@ -13,6 +13,7 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+// Request represents a request to be sent to HPP
 type Request struct {
 	hpp *HPP
 
@@ -139,27 +140,7 @@ func (r *Request) ToJSON() (json.RawMessage, error) {
 		return nil, errors.Wrap(err, "failed to validate HPP request")
 	}
 
-	js, err := json.Marshal(r)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal HPP request")
-	}
-
-	encoded := map[string]string{}
-	err = json.Unmarshal(js, &encoded)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal json")
-	}
-
-	for k, v := range encoded {
-		encoded[k] = base64.StdEncoding.EncodeToString([]byte(v))
-	}
-
-	js2, err := json.Marshal(encoded)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal encoded json")
-	}
-
-	return js2, nil
+	return r.MarshalJSONEncoded()
 }
 
 func (r *Request) generateDefaults() {
@@ -233,4 +214,29 @@ func (r *Request) basicHash() []string {
 
 func (r *Request) canStoreCard() bool {
 	return bool(r.EnableCardStorage) || r.SelectStoredCard != ""
+}
+
+// MarshalJSONEncoded marshals the request and Base64 encodes the values
+func (r *Request) MarshalJSONEncoded() (json.RawMessage, error) {
+	js, err := json.Marshal(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal HPP request")
+	}
+
+	encoded := map[string]string{}
+	err = json.Unmarshal(js, &encoded)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal HPP request json")
+	}
+
+	for k, v := range encoded {
+		encoded[k] = base64.StdEncoding.EncodeToString([]byte(v))
+	}
+
+	ejs, err := json.Marshal(encoded)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal encoded HPP json")
+	}
+
+	return ejs, nil
 }
