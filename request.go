@@ -1,8 +1,10 @@
 package hpp
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,27 +17,27 @@ type Request struct {
 	hpp *HPP
 
 	// The merchant ID supplied by Realex Payments – note this is not the merchant number supplied by your bank.
-	MerchantID JSONString `json:"MERCHANT_ID"`
+	MerchantID string `json:"MERCHANT_ID"`
 
 	// The sub-account to use for this transaction. If not present, the default sub-account will be used.
-	Account JSONString `json:"ACCOUNT"`
+	Account string `json:"ACCOUNT"`
 
 	// A unique alphanumeric id that’s used to identify the transaction. No spaces are allowed.
-	OrderID []byte `json:"ORDER_ID"`
+	OrderID string `json:"ORDER_ID"`
 
 	// Total amount to authorise in the lowest unit of the currency – i.e. 100 euro would be entered as 10000.
 	// If there is no decimal in the currency (e.g. JPY Yen) then contact Realex Payments. No decimal points are allowed.
 	// Amount should be set to 0 for OTB transactions (i.e. where validate card only is set to 1).
-	Amount JSONInt `json:"AMOUNT,string"`
+	Amount int `json:"AMOUNT,string"`
 
 	// A three-letter currency code (Eg. EUR, GBP). A list of currency codes can be provided by your account manager.
-	Currency JSONString `json:"CURRENCY,omitempty"`
+	Currency string `json:"CURRENCY,omitempty"`
 
 	// Date and time of the transaction. Entered in the following format: YYYYMMDDHHMMSS. Must be within 24 hours of the current time.
 	TimeStamp *JSONTime `json:"TIMESTAMP"`
 
 	// A digital signature generated using the SHA-1 algorithm.
-	Hash JSONString `json:"SHA1HASH"`
+	Hash string `json:"SHA1HASH"`
 
 	// Used to signify whether or not you wish the transaction to be captured in the next batch.
 	// If set to "1" and assuming the transaction is authorised then it will automatically be settled in the next batch.
@@ -45,45 +47,45 @@ type Request struct {
 	AutoSettleFlag JSONBool `json:"AUTO_SETTLE_FLAG,omitempty"`
 
 	// A freeform comment to describe the transaction.
-	CommentOne JSONString `json:"COMMENT1,omitempty"`
+	CommentOne string `json:"COMMENT1,omitempty"`
 
 	// A freeform comment to describe the transaction.
-	CommentTwo JSONString `json:"COMMENT2,omitempty"`
+	CommentTwo string `json:"COMMENT2,omitempty"`
 
 	// Used to signify whether or not you want a Transaction Suitability Score for this transaction.
 	// Can be "0" for no and "1" for yes.
-	ReturnTSS JSONString `json:"RETURN_TSS,omitempty"`
+	ReturnTSS string `json:"RETURN_TSS,omitempty"`
 
 	// The postcode or ZIP of the shipping address.
-	ShippingCode JSONString `json:"SHIPPING_CODE,omitempty"`
+	ShippingCode string `json:"SHIPPING_CODE,omitempty"`
 
 	// The country of the shipping address.
-	ShippingCountry JSONString `json:"SHIPPING_CO",omitempty`
+	ShippingCountry string `json:"SHIPPING_CO,omitempty"`
 
 	// The postcode or ZIP of the billing address.
-	BillingCode JSONString `json:"BILLING_CODE,omitempty"`
+	BillingCode string `json:"BILLING_CODE,omitempty"`
 
 	// The country of the billing address.
-	BillingCountry JSONString `json:"BILLING_CO,omitempty"`
+	BillingCountry string `json:"BILLING_CO,omitempty"`
 
 	// The customer number of the customer. You can send in any additional information about the transaction in this field,
 	// which will be visible under the transaction in the RealControl application.
-	CustomerNumber JSONString `json:"CUST_NUM,omitempty"`
+	CustomerNumber string `json:"CUST_NUM,omitempty"`
 
 	// A variable reference also associated with this customer. You can send in any additional information about the transaction in this field,
 	// which will be visible under the transaction in the RealControl application.
-	VariableReference JSONString `json:"VAR_REF,omitempty"`
+	VariableReference string `json:"VAR_REF,omitempty"`
 
 	// A product id associated with this product. You can send in any additional information about the transaction in this field,
 	// which will be visible under the transaction in the RealControl application.
-	ProductID JSONString `json:"PROD_ID,omitempty"`
+	ProductID string `json:"PROD_ID,omitempty"`
 
 	// Used to set what language HPP is displayed in. Currently HPP is available in English, Spanish and German, with other languages to follow.
 	// If the field is not sent in, the default language is the language that is set in your account configuration. This can be set by your account manager.
-	Language JSONString `json:"HPP_LANG,omitempty"`
+	Language string `json:"HPP_LANG,omitempty"`
 
 	// Used to set what text is displayed on the payment button for card transactions. If this field is not sent in, "Pay Now" is displayed on the button by default.
-	CardPaymentButton JSONString `json:"CARD_PAYMENT_BUTTON,omitempty"`
+	CardPaymentButton string `json:"CARD_PAYMENT_BUTTON,omitempty"`
 
 	// Enable card storage.
 	EnableCardStorage JSONBool `json:"CARD_STORAGE_ENABLE"`
@@ -92,13 +94,13 @@ type Request struct {
 	OfferSaveCard JSONBool `json:"OFFER_SAVE_CARD"`
 
 	// The payer reference.
-	PayerReference JSONString `json:"PAYER_REF"`
+	PayerReference string `json:"PAYER_REF"`
 
 	// The payment reference.
-	PaymentReference JSONString `json:"PMT_REF,omitempty"`
+	PaymentReference string `json:"PMT_REF,omitempty"`
 
 	// Payer exists.
-	PayerExists JSONString `json:"PAYER_EXIST,omitempty"`
+	PayerExists string `json:"PAYER_EXIST,omitempty"`
 
 	// Used to identify an OTB transaction.
 	ValidCardOnly JSONBool `json:"VALIDATE_CARD_ONLY"`
@@ -107,13 +109,13 @@ type Request struct {
 	DCCEnable JSONBool `json:"DCC_ENABLE"`
 
 	// Override merchant configuration for fraud. (Only if the merchant is configured for fraud).
-	FraudFilterMode JSONString `json:"HPP_FRAUDFILTER_MODE,omitempty"`
+	FraudFilterMode string `json:"HPP_FRAUDFILTER_MODE,omitempty"`
 
 	// The HPP Version. To use HPP Card Management select HPP_VERSION = 2.
-	Version JSONString `json:"HPP_VERSION,omitempty"`
+	Version string `json:"HPP_VERSION,omitempty"`
 
 	// The payer reference. If this flag is received, HPP will retrieve a list of the payment methods saved for that payer.
-	SelectStoredCard JSONString `json:"HPP_SELECT_STORED_CARD,omitempty"`
+	SelectStoredCard string `json:"HPP_SELECT_STORED_CARD,omitempty"`
 
 	// Anything else you sent to us in the request.
 	SupplementaryData map[string]string `json:"-"`
@@ -142,7 +144,22 @@ func (r *Request) ToJSON() (json.RawMessage, error) {
 		return nil, errors.Wrap(err, "failed to marshal HPP request")
 	}
 
-	return js, nil
+	encoded := map[string]string{}
+	err = json.Unmarshal(js, &encoded)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal json")
+	}
+
+	for k, v := range encoded {
+		encoded[k] = base64.StdEncoding.EncodeToString([]byte(v))
+	}
+
+	js2, err := json.Marshal(encoded)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal encoded json")
+	}
+
+	return js2, nil
 }
 
 func (r *Request) generateDefaults() {
@@ -151,8 +168,8 @@ func (r *Request) generateDefaults() {
 		r.TimeStamp = &now
 	}
 
-	if len(r.OrderID) < 1 {
-		r.OrderID = uuid.NewV4().Bytes()
+	if r.OrderID == "" {
+		r.OrderID = string(uuid.NewV4().Bytes())
 	}
 }
 
@@ -186,18 +203,18 @@ func (r *Request) Validate() error {
 // BuildHash creates the security hash from a number of fields and the shared secret.
 func (r *Request) BuildHash(secret string) {
 	s := r.buildHashString()
-	r.Hash = JSONString(GenerateHash(s, secret))
+	r.Hash = GenerateHash(s, secret)
 }
 
 func (r *Request) buildHashString() string {
 	s := r.basicHash()
 
 	if r.canStoreCard() {
-		s = append(s, []string{r.PayerReference.String(), r.PaymentReference.String()}...)
+		s = append(s, []string{r.PayerReference, r.PaymentReference}...)
 	}
 
 	if r.FraudFilterMode != "" {
-		s = append(s, r.FraudFilterMode.String())
+		s = append(s, r.FraudFilterMode)
 	}
 
 	return strings.Join(s, Separator)
@@ -208,10 +225,10 @@ func (r *Request) basicHash() []string {
 	if r.TimeStamp != nil {
 		ts = r.TimeStamp.String()
 	}
-	amount := r.Amount.String()
+	amount := strconv.Itoa(r.Amount)
 	orderID := string(r.OrderID)
 
-	return []string{ts, r.MerchantID.String(), orderID, amount, r.Currency.String()}
+	return []string{ts, r.MerchantID, orderID, amount, r.Currency}
 }
 
 func (r *Request) canStoreCard() bool {

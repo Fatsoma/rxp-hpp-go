@@ -1,7 +1,6 @@
 package hpp
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,9 +15,7 @@ func (jt JSONTime) String() string {
 }
 
 func (jt JSONTime) MarshalJSON() ([]byte, error) {
-	es := base64.StdEncoding.EncodeToString([]byte(jt.String()))
-
-	return json.Marshal(es)
+	return json.Marshal(jt.String())
 }
 
 func (jt *JSONTime) UnmarshalJSON(b []byte) error {

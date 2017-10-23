@@ -3,6 +3,8 @@ package hpp
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"testing"
 	"time"
@@ -21,7 +23,7 @@ func TestRequestToJSON(t *testing.T) {
 		Currency:          "EUR",
 		TimeStamp:         &jsonTime,
 		MerchantID:        "MerchantID",
-		OrderID:           []byte("OrderID"),
+		OrderID:           "OrderID",
 		Amount:            100,
 		CommentOne:        `a-z A-Z 0-9 ' ", + “” ._ - & \ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥`,
 		CommentTwo:        `Comment Two`,
@@ -45,6 +47,10 @@ func TestRequestToJSON(t *testing.T) {
 		DCCEnable:         false,
 	}
 
+	reqWithoutDefaults := req
+	reqWithoutDefaults.TimeStamp = nil
+	reqWithoutDefaults.OrderID = ""
+
 	var tests = []struct {
 		//given
 		description string
@@ -58,9 +64,16 @@ func TestRequestToJSON(t *testing.T) {
 			"Given a valid request",
 			req,
 
-			[]byte(`{"MERCHANT_ID":"TWVyY2hhbnRJRA==","ACCOUNT":"bXlBY2NvdW50","ORDER_ID":"T3JkZXJJRA==","AMOUNT":"MTAw","CURRENCY":"RVVS","TIMESTAMP":"MjA5OTAxMDExMjAwMDA=","SHA1HASH":"YWFmYWIxMmRkNGY5MmUwZDZlMTNkZDhjM2ZjZTkzMjMyYWVkZjI4YQ==","AUTO_SETTLE_FLAG":"MQ==","COMMENT1":"YS16IEEtWiAwLTkgJyAiLCArIOKAnOKAnSAuXyAtICYgXCAvIEAgISA/ICUgKCApKiA6IMKjICQgJiDigqwgIyBbIF0gfCA9IDvDgMOBw4LDg8OEw4XDhsOHw4jDicOKw4vDjMONw47Dj8OQw5HDksOTw5TDlcOWw5fDmMOZw5rDm8Ocw53DnsOfw6DDocOiw6PDpMOlw6bDp8Oow6nDqsOrw6zDrcOuw6/DsMOxw7LDs8O0w7XDtsO3w7jCpMO5w7rDu8O8w73DvsO/xZLFvcWhxZPFvsW4wqU=","COMMENT2":"Q29tbWVudCBUd28=","RETURN_TSS":"MA==","SHIPPING_CODE":"NTZ8OTg3","SHIPPING_CO":"SVJFTEFORA==","BILLING_CODE":"MTIzfDU2","BILLING_CO":"SVJFTEFORA==","CUST_NUM":"MTIzNDU2","VAR_REF":"VmFyaWFibGVSZWY=","PROD_ID":"UHJvZHVjdElE","HPP_LANG":"RU4=","CARD_PAYMENT_BUTTON":"U3VibWl0IFBheW1lbnQ=","CARD_STORAGE_ENABLE":"MA==","OFFER_SAVE_CARD":"MA==","PAYER_REF":"UGF5ZXJSZWY=","PMT_REF":"UGF5bWVudFJlZg==","PAYER_EXIST":"MA==","VALIDATE_CARD_ONLY":"MA==","DCC_ENABLE":"MA=="}`),
+			readSampleJSON("hpp-request-encoded-valid"),
 			nil,
 		},
+		// {
+		// 	"Given a blank request",
+		// 	reqWithoutDefaults,
+		//
+		// 	readSampleJSON("hpp-request-encoded-valid"),
+		// 	nil,
+		// },
 	}
 
 	for _, test := range tests {
@@ -75,7 +88,7 @@ func TestRequestToJSON(t *testing.T) {
 			}
 		} else {
 			assert.Nil(t, err, test.description)
-			assert.Equal(t, string(test.json), string(j), test.description)
+			assert.JSONEq(t, string(test.json), string(j), test.description)
 		}
 	}
 }
@@ -97,7 +110,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			"Given the merchant ID is too long",
-			Request{MerchantID: JSONString(randomString(51))},
+			Request{MerchantID: randomString(51)},
 
 			fmt.Errorf("MERCHANT_ID: %s", merchantIDSize),
 		},
@@ -175,7 +188,7 @@ func TestBuildHash(t *testing.T) {
 		r.BuildHash("mysecret")
 
 		// Assertions
-		assert.Equal(t, r.Hash.String(), test.hash, test.description)
+		assert.Equal(t, r.Hash, test.hash, test.description)
 	}
 }
 
@@ -188,8 +201,8 @@ func testRequest(cardStorage, selectStoredCard, fraudFilterMode bool) Request {
 		hpp:        &hpp,
 		TimeStamp:  &t,
 		MerchantID: "thestore",
-		OrderID:    []byte("ORD453-11"),
-		Amount:     JSONInt(29900),
+		OrderID:    "ORD453-11",
+		Amount:     29900,
 		Currency:   "EUR",
 	}
 
@@ -221,4 +234,13 @@ func randomString(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func readSampleJSON(file string) []byte {
+	js, err := ioutil.ReadFile("./sample-json/" + file + ".json")
+	if err != nil {
+		log.Fatal("Could not read " + file)
+	}
+
+	return js
 }

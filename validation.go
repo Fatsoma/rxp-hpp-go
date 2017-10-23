@@ -104,7 +104,7 @@ const (
 	dccEnablePattern = "DCC enable flag must be 1 or 0"
 )
 
-func validateMerchantID(merchantID *JSONString) *validation.FieldRules {
+func validateMerchantID(merchantID *string) *validation.FieldRules {
 	return validation.Field(
 		merchantID,
 		validation.Required.Error("is required"),
@@ -113,7 +113,7 @@ func validateMerchantID(merchantID *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateAccount(account *JSONString) *validation.FieldRules {
+func validateAccount(account *string) *validation.FieldRules {
 	return validation.Field(
 		account,
 		validation.Length(0, 30).Error(accountSize),
@@ -121,7 +121,7 @@ func validateAccount(account *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateOrderID(orderID *[]byte) *validation.FieldRules {
+func validateOrderID(orderID *string) *validation.FieldRules {
 	return validation.Field(
 		orderID,
 		validation.Length(0, 50).Error(orderIDSize),
@@ -129,7 +129,7 @@ func validateOrderID(orderID *[]byte) *validation.FieldRules {
 	)
 }
 
-func validateAmount(amount *JSONInt) *validation.FieldRules {
+func validateAmount(amount *int) *validation.FieldRules {
 	return validation.Field(
 		amount,
 		validation.Required.Error("is required"),
@@ -138,7 +138,7 @@ func validateAmount(amount *JSONInt) *validation.FieldRules {
 	)
 }
 
-func validateCurrency(currency *JSONString) *validation.FieldRules {
+func validateCurrency(currency *string) *validation.FieldRules {
 	return validation.Field(
 		currency,
 		validation.Length(3, 3).Error(currencySize),
@@ -146,7 +146,7 @@ func validateCurrency(currency *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateHash(hash *JSONString) *validation.FieldRules {
+func validateHash(hash *string) *validation.FieldRules {
 	return validation.Field(
 		hash,
 		validation.Length(40, 40).Error(hashSize),
@@ -161,7 +161,7 @@ func validateAutoSettleFlag(autoSettle *JSONBool) *validation.FieldRules {
 	)
 }
 
-func validateComment(comment *JSONString) *validation.FieldRules {
+func validateComment(comment *string) *validation.FieldRules {
 	return validation.Field(
 		comment,
 		validation.Length(0, 255).Error(commentSize),
@@ -169,14 +169,14 @@ func validateComment(comment *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateReturnTss(returnTss *JSONString) *validation.FieldRules {
+func validateReturnTss(returnTss *string) *validation.FieldRules {
 	return validation.Field(
 		returnTss,
 		validation.Match(boolRegexp).Error(returnTssPattern),
 	)
 }
 
-func validateShippingCode(shippingCode *JSONString) *validation.FieldRules {
+func validateShippingCode(shippingCode *string) *validation.FieldRules {
 	return validation.Field(
 		shippingCode,
 		validation.Length(0, 30).Error(shippingCodeSize),
@@ -184,7 +184,7 @@ func validateShippingCode(shippingCode *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateShippingCountry(shippingCountry *JSONString) *validation.FieldRules {
+func validateShippingCountry(shippingCountry *string) *validation.FieldRules {
 	return validation.Field(
 		shippingCountry,
 		validation.Length(0, 50).Error(shippingCountrySize),
@@ -192,7 +192,7 @@ func validateShippingCountry(shippingCountry *JSONString) *validation.FieldRules
 	)
 }
 
-func validateBillingCode(billingCode *JSONString) *validation.FieldRules {
+func validateBillingCode(billingCode *string) *validation.FieldRules {
 	return validation.Field(
 		billingCode,
 		validation.Length(0, 60).Error(billingCodeSize),
@@ -200,7 +200,7 @@ func validateBillingCode(billingCode *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateBillingCountry(billingCountry *JSONString) *validation.FieldRules {
+func validateBillingCountry(billingCountry *string) *validation.FieldRules {
 	return validation.Field(
 		billingCountry,
 		validation.Length(0, 50).Error(billingCountrySize),
@@ -208,7 +208,7 @@ func validateBillingCountry(billingCountry *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateCustomerNumber(customerNumber *JSONString) *validation.FieldRules {
+func validateCustomerNumber(customerNumber *string) *validation.FieldRules {
 	return validation.Field(
 		customerNumber,
 		validation.Length(0, 50).Error(customerNumberSize),
@@ -216,7 +216,7 @@ func validateCustomerNumber(customerNumber *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateVariableReference(variableReference *JSONString) *validation.FieldRules {
+func validateVariableReference(variableReference *string) *validation.FieldRules {
 	return validation.Field(
 		variableReference,
 		validation.Length(0, 50).Error(variableReferenceSize),
@@ -224,7 +224,7 @@ func validateVariableReference(variableReference *JSONString) *validation.FieldR
 	)
 }
 
-func validateProductID(productID *JSONString) *validation.FieldRules {
+func validateProductID(productID *string) *validation.FieldRules {
 	return validation.Field(
 		productID,
 		validation.Length(0, 50).Error(productIDSize),
@@ -232,14 +232,14 @@ func validateProductID(productID *JSONString) *validation.FieldRules {
 	)
 }
 
-func validateLanguage(language *JSONString) *validation.FieldRules {
+func validateLanguage(language *string) *validation.FieldRules {
 	return validation.Field(
 		language,
 		validation.Match(languageRegexp).Error(languagePattern),
 	)
 }
 
-func validateCardPaymentButton(cardPaymentButton *JSONString) *validation.FieldRules {
+func validateCardPaymentButton(cardPaymentButton *string) *validation.FieldRules {
 	return validation.Field(
 		cardPaymentButton,
 		validation.Length(0, 25).Error(cardPaymentButtonTextSize),
@@ -261,7 +261,7 @@ func validateOfferSaveCard(offerSaveCard *JSONBool) *validation.FieldRules {
 	)
 }
 
-func validatePayerReference(payerReference *JSONString) *validation.FieldRules {
+func validatePayerReference(payerReference *string) *validation.FieldRules {
 	return validation.Field(
 		payerReference,
 		validation.Length(0, 50).Error(payerReferenceSize),
@@ -269,7 +269,7 @@ func validatePayerReference(payerReference *JSONString) *validation.FieldRules {
 	)
 }
 
-func validatePaymentReference(paymentReference *JSONString) *validation.FieldRules {
+func validatePaymentReference(paymentReference *string) *validation.FieldRules {
 	return validation.Field(
 		paymentReference,
 		validation.Length(0, 50).Error(paymentReferenceSize),
@@ -277,7 +277,7 @@ func validatePaymentReference(paymentReference *JSONString) *validation.FieldRul
 	)
 }
 
-func validatePayerExists(payerExists *JSONString) *validation.FieldRules {
+func validatePayerExists(payerExists *string) *validation.FieldRules {
 	return validation.Field(
 		payerExists,
 		validation.Length(1, 1).Error(payerExistsSize),

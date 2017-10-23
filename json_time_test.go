@@ -23,7 +23,7 @@ func TestJSONTimeMarshalJSON(t *testing.T) {
 
 	assert.Equal(
 		t,
-		[]byte(`"MjAxMzA4MTQxMjIyMzk="`),
+		[]byte("\"20130814122239\""),
 		json,
 		"json time should match encoded",
 	)

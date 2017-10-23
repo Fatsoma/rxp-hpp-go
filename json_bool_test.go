@@ -20,13 +20,13 @@ func TestJSONBoolMarshalJSON(t *testing.T) {
 			"Given a true bool it marshals as 1",
 			true,
 
-			"\"MQ==\"",
+			"\"1\"",
 		},
 		{
 			"Given a false bool it marshals as 0",
 			false,
 
-			"\"MA==\"",
+			"\"0\"",
 		},
 	}
 
