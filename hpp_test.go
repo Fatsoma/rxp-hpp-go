@@ -91,10 +91,8 @@ func TestToJSON(t *testing.T) {
 		j, err := hpp.ToJSON(r, test.encoded)
 
 		// Assertions
-		if err != nil {
-			if assert.NotNil(t, test.err, test.description) {
-				assert.EqualError(t, err, test.err.Error(), test.description)
-			}
+		if err != nil && assert.NotNil(t, test.err, test.description) {
+			assert.EqualError(t, err, test.err.Error(), test.description)
 		} else {
 			assert.Nil(t, err, test.description)
 			assert.JSONEq(t, string(test.json), string(j), test.description)
@@ -216,10 +214,8 @@ func TestFromJSON(t *testing.T) {
 		resp, err := hpp.FromJSON(test.json, test.encoded)
 
 		// Assertions
-		if err != nil {
-			if assert.NotNil(t, test.err, test.description) {
-				assert.EqualError(t, err, test.err.Error(), test.description)
-			}
+		if err != nil && assert.NotNil(t, test.err, test.description) {
+			assert.EqualError(t, err, test.err.Error(), test.description)
 		} else {
 			assert.Nil(t, err, test.description)
 			assert.Equal(t, &test.response, resp, test.description)

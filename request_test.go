@@ -76,10 +76,8 @@ func TestRequestMarshalJSON(t *testing.T) {
 		js, err := json.Marshal(&test.request)
 
 		// Assertions
-		if err != nil {
-			if assert.NotNil(t, test.err, test.description) {
-				assert.EqualError(t, err, test.err.Error(), test.description)
-			}
+		if err != nil && assert.NotNil(t, test.err, test.description) {
+			assert.EqualError(t, err, test.err.Error(), test.description)
 		} else {
 			assert.Nil(t, err, test.description)
 			assert.JSONEq(t, string(test.json), string(js), test.description)
