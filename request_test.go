@@ -59,7 +59,7 @@ func TestRequestMarshalJSON(t *testing.T) {
 				},
 			},
 
-			readSampleJSON("hpp-request-unknown-data"),
+			readSampleRequest("unknown-data"),
 			nil,
 		},
 		{
@@ -83,83 +83,6 @@ func TestRequestMarshalJSON(t *testing.T) {
 		} else {
 			assert.Nil(t, err, test.description)
 			assert.JSONEq(t, string(test.json), string(js), test.description)
-		}
-	}
-}
-
-func TestRequestToJSON(t *testing.T) {
-	hpp := New("mysecret")
-	timestamp := time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC)
-	jsonTime := JSONTime(timestamp)
-
-	req := Request{
-		hpp:               &hpp,
-		Account:           "myAccount",
-		Currency:          "EUR",
-		TimeStamp:         &jsonTime,
-		MerchantID:        "MerchantID",
-		OrderID:           "OrderID",
-		Amount:            100,
-		CommentOne:        `a-z A-Z 0-9 ' ", + “” ._ - & \ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥`,
-		CommentTwo:        `Comment Two`,
-		ReturnTSS:         false,
-		ShippingCode:      "56|987",
-		ShippingCountry:   "IRELAND",
-		BillingCode:       "123|56",
-		BillingCountry:    "IRELAND",
-		CustomerNumber:    "123456",
-		VariableReference: "VariableRef",
-		ProductID:         "ProductID",
-		Language:          "EN",
-		CardPaymentButton: "Submit Payment",
-		AutoSettleFlag:    "1",
-		EnableCardStorage: false,
-		OfferSaveCard:     false,
-		PayerReference:    "PayerRef",
-		PaymentReference:  "PaymentRef",
-		PayerExists:       "0",
-		ValidCardOnly:     false,
-		DCCEnable:         false,
-	}
-
-	var tests = []struct {
-		//given
-		description string
-		request     Request
-
-		//expected
-		json json.RawMessage
-		err  error
-	}{
-		{
-			"Given a valid request",
-			req,
-
-			readSampleJSON("hpp-request-encoded-valid"),
-			nil,
-		},
-		{
-			"Given an invalid request",
-			Request{hpp: &hpp, Amount: 100, MerchantID: "test", OrderID: "test%"},
-
-			nil,
-			fmt.Errorf("failed to validate HPP request: ORDER_ID: Order ID must only contain alphanumeric characters, dash and underscore."),
-		},
-	}
-
-	for _, test := range tests {
-		// Subject
-		r := test.request
-		j, err := r.ToJSON()
-
-		// Assertions
-		if err != nil {
-			if assert.NotNil(t, test.err, test.description) {
-				assert.EqualError(t, err, test.err.Error(), test.description)
-			}
-		} else {
-			assert.Nil(t, err, test.description)
-			assert.JSONEq(t, string(test.json), string(j), test.description)
 		}
 	}
 }
@@ -404,8 +327,8 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func readSampleJSON(file string) []byte {
-	js, err := ioutil.ReadFile("./sample-json/" + file + ".json")
+func readSampleRequest(file string) []byte {
+	js, err := ioutil.ReadFile("./sample-json/hpp-request-" + file + ".json")
 	if err != nil {
 		log.Fatal("Could not read " + file)
 	}

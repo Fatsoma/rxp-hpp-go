@@ -1,6 +1,14 @@
 package hpp
 
-import "strings"
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 // Response represents a response from HPP
 type Response struct {
@@ -72,7 +80,61 @@ type Response struct {
 	TSS map[string]string `json:"TSS"`
 
 	// Anything else you sent to us in the request will be returned to you in supplementary data.
-	SupplementaryData map[string]string `json:"-"`
+	SupplementaryData map[string]interface{} `json:"-"`
+}
+
+// FromJSON converts valid JSON into the Response
+func (r *Response) FromJSON(data []byte) error {
+	fmt.Println("Converting JSON to HppResponse.")
+
+	err := UnmarshalJSONEncoded(r, data)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshal response from json")
+	}
+
+	fmt.Println("Validating response hash.")
+	err = r.ValidateHash(r.hpp.Secret)
+	if err != nil {
+		return errors.Wrap(err, "secret does not match expected")
+	}
+
+	return nil
+}
+
+// ValidateHash ensure the HPP response hash is what we expect it to be
+func (r *Response) ValidateHash(secret string) error {
+	expected := r.BuildHash(secret)
+	if expected != r.Hash {
+		return fmt.Errorf("expected hash %s received %s", expected, r.Hash)
+	}
+
+	return nil
+}
+
+// UnmarshalJSON override the standard JSON unmarshaller to include the supplementary data
+func (r *Response) UnmarshalJSON(data []byte) error {
+	type Alias Response
+	ra := (*Alias)(r)
+	err := json.Unmarshal(data, &ra)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshal response")
+	}
+
+	// Add the supplementary data from the response
+	extra := map[string]interface{}{}
+	err = json.Unmarshal(data, &extra)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshal response to map")
+	}
+
+	// delete any keys that are already in the response struct fields
+	for _, k := range r.jsonfields() {
+		delete(extra, k)
+	}
+
+	r.SupplementaryData = extra
+
+	return nil
 }
 
 // BuildHash creates the security hash from a number of fields and the shared secret.
@@ -85,4 +147,60 @@ func (r *Response) BuildHash(secret string) string {
 	s := []string{ts, r.MerchantID, r.OrderID, r.Result, r.Message, r.PasRef, r.AuthCode}
 
 	return GenerateHash(strings.Join(s, Separator), secret)
+}
+
+func (r Response) jsonfields() (names []string) {
+	val := reflect.ValueOf(r)
+	for i := 0; i < val.Type().NumField(); i++ {
+		jt := val.Type().Field(i).Tag.Get("json")
+		jt = strings.TrimRight(jt, ",string")
+		names = append(names, jt)
+	}
+	return
+}
+
+// UnmarshalJSONEncoded Base64 decodes the values and unmarshals the response
+func UnmarshalJSONEncoded(resp interface{}, data []byte) error {
+	decoded := map[string]interface{}{}
+	err := json.Unmarshal(data, &decoded)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal HPP response json")
+	}
+
+	for k, v := range decoded {
+		switch val := v.(type) {
+		case string:
+			s, derr := base64.StdEncoding.DecodeString(val)
+			if derr != nil {
+				return errors.Wrap(derr, "failed to decode string from json response")
+			}
+			decoded[k] = string(s)
+		case map[string]interface{}:
+			m, derr := decodeNestedMap(val)
+			if derr != nil {
+				return errors.Wrap(derr, "failed to decode map from json response")
+			}
+			decoded[k] = m
+		}
+	}
+
+	dd, err := json.Marshal(decoded)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal decoded response")
+	}
+
+	return json.Unmarshal(dd, resp)
+}
+
+func decodeNestedMap(val map[string]interface{}) (map[string]string, error) {
+	res := map[string]string{}
+	for k, v := range val {
+		s, err := base64.StdEncoding.DecodeString((v).(string))
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot decode val")
+		}
+		res[k] = string(s)
+	}
+
+	return res, nil
 }

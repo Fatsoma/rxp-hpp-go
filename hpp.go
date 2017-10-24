@@ -2,8 +2,11 @@ package hpp
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Separator used in generating sha1 hashes
@@ -19,14 +22,21 @@ func New(s string) HPP {
 	return HPP{Secret: s}
 }
 
-// Request initialise a new request with this HPP set
-func (hpp *HPP) Request() Request {
-	return Request{hpp: hpp}
+// ToJSON produces JSON from a Request
+func (hpp *HPP) ToJSON(req Request) (json.RawMessage, error) {
+	req.hpp = hpp
+	return req.ToJSON()
 }
 
-// Response initialise a new request with this HPP set
-func (hpp *HPP) Response() Response {
-	return Response{hpp: hpp}
+// FromJSON produces a Response from a JSON response
+func (hpp *HPP) FromJSON(data []byte) (*Response, error) {
+	resp := Response{hpp: hpp}
+	err := resp.FromJSON(data)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to build response from json")
+	}
+
+	return &resp, nil
 }
 
 // GenerateHash ...
