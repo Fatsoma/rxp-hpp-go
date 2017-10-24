@@ -67,16 +67,15 @@ func TestRequestMarshalJSON(t *testing.T) {
 			Request{hpp: &hpp, SupplementaryData: map[string]interface{}{"test": func() {}}},
 
 			nil,
-			fmt.Errorf("json: unsupported type: func()"),
+			fmt.Errorf("json: error calling MarshalJSON for type *hpp.Request: json: unsupported type: func()"),
 		},
 	}
 
 	for _, test := range tests {
 		// Subject
-		js, err := test.request.MarshalJSON()
+		js, err := json.Marshal(&test.request)
 
 		// Assertions
-		fmt.Println("TestRequestMarshalJSON")
 		if err != nil {
 			if assert.NotNil(t, test.err, test.description) {
 				assert.EqualError(t, err, test.err.Error(), test.description)
