@@ -12,6 +12,82 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRequestMarshalJSON(t *testing.T) {
+	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
+	hpp := New("mysecret")
+
+	var tests = []struct {
+		//given
+		description string
+		request     Request
+
+		//expected
+		json json.RawMessage
+		err  error
+	}{
+		{
+			"Given the request can be marshalled",
+			Request{
+				hpp:               &hpp,
+				Account:           "myAccount",
+				Amount:            100,
+				AutoSettleFlag:    "1",
+				BillingCountry:    "IRELAND",
+				BillingCode:       "123|56",
+				CardPaymentButton: "Submit Payment",
+				CommentOne:        "a-z A-Z 0-9 ' \", + “” ._ - & \\ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥",
+				CommentTwo:        "Comment Two",
+				Currency:          "EUR",
+				CustomerNumber:    "123456",
+				Language:          "EN",
+				MerchantID:        "MerchantID",
+				PayerReference:    "PayerRef",
+				PaymentReference:  "PaymentRef",
+				OrderID:           "OrderID",
+				Hash:              "5d8f05abd618e50db4861a61cc940112786474cf",
+				ShippingCountry:   "IRELAND",
+				ShippingCode:      "56|987",
+				TimeStamp:         &timestamp,
+				ProductID:         "ProductID",
+				VariableReference: "VariableRef",
+				PayerExists:       "0",
+				SupplementaryData: map[string]interface{}{
+					"UNKNOWN_1": "Unknown value 1",
+					"UNKNOWN_2": "Unknown value 2",
+					"UNKNOWN_3": "Unknown value 3",
+					"UNKNOWN_4": "Unknown value 4",
+				},
+			},
+
+			readSampleJSON("hpp-request-unknown-data"),
+			nil,
+		},
+		{
+			"Given the request can be marshalled",
+			Request{hpp: &hpp, SupplementaryData: map[string]interface{}{"test": func() {}}},
+
+			nil,
+			fmt.Errorf("json: unsupported type: func()"),
+		},
+	}
+
+	for _, test := range tests {
+		// Subject
+		js, err := test.request.MarshalJSON()
+
+		// Assertions
+		fmt.Println("TestRequestMarshalJSON")
+		if err != nil {
+			if assert.NotNil(t, test.err, test.description) {
+				assert.EqualError(t, err, test.err.Error(), test.description)
+			}
+		} else {
+			assert.Nil(t, err, test.description)
+			assert.JSONEq(t, string(test.json), string(js), test.description)
+		}
+	}
+}
+
 func TestRequestToJSON(t *testing.T) {
 	hpp := New("mysecret")
 	timestamp := time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC)

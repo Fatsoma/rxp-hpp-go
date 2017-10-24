@@ -119,7 +119,26 @@ type Request struct {
 	SelectStoredCard string `json:"HPP_SELECT_STORED_CARD,omitempty"`
 
 	// Anything else you sent to us in the request.
-	SupplementaryData map[string]string `json:"-"`
+	SupplementaryData map[string]interface{} `json:"-"`
+}
+
+// MarshalJSON override the standard JSON marshaller to include the supplementary data
+func (r *Request) MarshalJSON() ([]byte, error) {
+	type Alias Request
+	ra := (*Alias)(r)
+	js, err := json.Marshal(ra)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to marshal request")
+	}
+
+	// Add the supplementary data to the JSON response
+	sup := r.SupplementaryData
+	err = json.Unmarshal(js, &sup)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to marshal request supplementary data")
+	}
+
+	return json.Marshal(sup)
 }
 
 // ToJSON converts the request into valid JSON
