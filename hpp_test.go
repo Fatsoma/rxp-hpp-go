@@ -53,21 +53,32 @@ func TestToJSON(t *testing.T) {
 		//given
 		description string
 		request     Request
+		encoded     bool
 
 		//expected
 		json json.RawMessage
 		err  error
 	}{
 		{
-			"Given a valid request",
+			"Given a valid encoded request",
 			req,
+			true,
 
 			readSampleRequest("encoded-valid"),
 			nil,
 		},
 		{
+			"Given a valid non-encoded request",
+			req,
+			false,
+
+			readSampleRequest("valid"),
+			nil,
+		},
+		{
 			"Given an invalid request",
 			Request{hpp: &hpp, Amount: 100, MerchantID: "test", OrderID: "test%"},
+			true,
 
 			nil,
 			fmt.Errorf("failed to validate HPP request: ORDER_ID: Order ID must only contain alphanumeric characters, dash and underscore."),
@@ -77,7 +88,7 @@ func TestToJSON(t *testing.T) {
 	for _, test := range tests {
 		// Subject
 		r := test.request
-		j, err := hpp.ToJSON(r)
+		j, err := hpp.ToJSON(r, test.encoded)
 
 		// Assertions
 		if err != nil {
@@ -99,6 +110,7 @@ func TestFromJSON(t *testing.T) {
 		//given
 		description string
 		json        json.RawMessage
+		encoded     bool
 
 		//expected
 		response Response
@@ -107,6 +119,7 @@ func TestFromJSON(t *testing.T) {
 		{
 			"Given valid response data",
 			readSampleResponse("encoded-valid"),
+			true,
 
 			Response{
 				hpp:        &hpp,
@@ -141,15 +154,57 @@ func TestFromJSON(t *testing.T) {
 			nil,
 		},
 		{
+			"Given valid response data",
+			readSampleResponse("valid"),
+			false,
+
+			Response{
+				hpp:               &hpp,
+				MerchantID:        "thestore",
+				Account:           "myAccount",
+				OrderID:           "ORD453-11",
+				Amount:            100,
+				AuthCode:          "79347",
+				TimeStamp:         &timestamp,
+				Hash:              "f093a0b233daa15f2bf44888f4fe75cb652e7bf0",
+				Result:            "00",
+				Message:           "Successful",
+				CvnResult:         "1",
+				PasRef:            "3737468273643",
+				BatchID:           "654321",
+				ECI:               "1",
+				CAVV:              "123",
+				XID:               "654564564",
+				CommentOne:        `a-z A-Z 0-9 ' ", + “” ._ - & \ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥`,
+				CommentTwo:        "Comment Two",
+				SupplementaryData: map[string]interface{}{},
+				TSS: map[string]string{
+					"TSS_2": "TSS_2_VALUE",
+					"TSS_1": "TSS_1_VALUE",
+				},
+			},
+			nil,
+		},
+		{
 			"Given invalid json",
 			[]byte(`invalid`),
+			true,
 
 			Response{},
-			fmt.Errorf("unable to build response from json: unable to unmarshal response from json: failed to unmarshal HPP response json: invalid character 'i' looking for beginning of value"),
+			fmt.Errorf("unable to build response from json: unable to unmarshal encoded response from json: failed to unmarshal HPP response json: invalid character 'i' looking for beginning of value"),
+		},
+		{
+			"Given invalid json without encoded flag",
+			[]byte(`invalid`),
+			false,
+
+			Response{},
+			fmt.Errorf("unable to build response from json: unable to unmarshal response from json: invalid character 'i' looking for beginning of value"),
 		},
 		{
 			"Given valid but incomplete json",
 			[]byte(`{"ACCOUNT": "test", "SHA1HASH": "VEVTVA=="}`),
+			true,
 
 			Response{},
 			fmt.Errorf("unable to build response from json: secret does not match expected: expected hash aca0089a38f647d3dae1c1fae9fa0a1c642151f0 received TEST"),
@@ -158,7 +213,7 @@ func TestFromJSON(t *testing.T) {
 
 	for _, test := range tests {
 		// Subject
-		resp, err := hpp.FromJSON(test.json)
+		resp, err := hpp.FromJSON(test.json, test.encoded)
 
 		// Assertions
 		if err != nil {

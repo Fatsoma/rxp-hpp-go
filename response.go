@@ -84,16 +84,23 @@ type Response struct {
 }
 
 // FromJSON converts valid JSON into the Response
-func (r *Response) FromJSON(data []byte) error {
+func (r *Response) FromJSON(data []byte, encoded bool) error {
 	fmt.Println("Converting JSON to HppResponse.")
 
-	err := UnmarshalJSONEncoded(r, data)
-	if err != nil {
-		return errors.Wrap(err, "unable to unmarshal response from json")
+	if encoded {
+		err := UnmarshalJSONEncoded(r, data)
+		if err != nil {
+			return errors.Wrap(err, "unable to unmarshal encoded response from json")
+		}
+	} else {
+		err := json.Unmarshal(data, r)
+		if err != nil {
+			return errors.Wrap(err, "unable to unmarshal response from json")
+		}
 	}
 
 	fmt.Println("Validating response hash.")
-	err = r.ValidateHash(r.hpp.Secret)
+	err := r.ValidateHash(r.hpp.Secret)
 	if err != nil {
 		return errors.Wrap(err, "secret does not match expected")
 	}

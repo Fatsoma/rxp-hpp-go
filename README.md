@@ -21,12 +21,12 @@ import hpp "github.com/Fatsoma/rxp-hpp-go"
 ### Creating Request JSON for Realex JS SDK
 ```golang
 
-req := Request{
+req := hpp.Request{
   Amount:     100,
   Currency:   "EUR",
   MerchantID: "merchantID",
 }
-json, err := hpp.New("secret").ToJSON(req)
+json, err := hpp.New("secret").ToJSON(req, true)
 if err != nil {
   // make request with built JSON
 }
@@ -34,7 +34,7 @@ if err != nil {
 ```
 ### Consuming Response JSON from Realex JS SDK
 ```golang
-resp, err := hpp.New("secret").FromJSON(json)
+resp, err := hpp.New("secret").FromJSON(json, true)
 ```
 ## License
 See the LICENSE file.

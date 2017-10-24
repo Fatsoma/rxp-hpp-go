@@ -248,6 +248,7 @@ func TestMarshalJSONEncoded(t *testing.T) {
 		//given
 		description string
 		request     interface{}
+		encoded     bool
 
 		//expected
 		err error
@@ -255,25 +256,35 @@ func TestMarshalJSONEncoded(t *testing.T) {
 		{
 			"Given valid request",
 			&testReq,
+			true,
 
 			nil,
 		},
 		{
 			"Given a structure that cannot be marshalled",
 			func() {},
+			true,
 
 			fmt.Errorf("failed to marshal HPP request: json: unsupported type: func()"),
 		},
 		{
 			"Given a type that cannot be encoded",
 			TestStruct{},
+			true,
 
 			fmt.Errorf("failed to unmarshal HPP request json: json: cannot unmarshal bool into Go value of type string"),
+		},
+		{
+			"Given valid request which should not be encoded",
+			&testReq,
+			false,
+
+			nil,
 		},
 	}
 
 	for _, test := range tests {
-		_, err := MarshalJSONEncoded(test.request)
+		_, err := MarshalJSONEncoded(test.request, test.encoded)
 
 		if err != nil && assert.NotNil(t, test.err, test.description) {
 			assert.EqualError(t, err, test.err.Error())

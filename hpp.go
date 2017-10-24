@@ -23,15 +23,15 @@ func New(s string) HPP {
 }
 
 // ToJSON produces JSON from a Request
-func (hpp *HPP) ToJSON(req Request) (json.RawMessage, error) {
+func (hpp *HPP) ToJSON(req Request, encoded bool) (json.RawMessage, error) {
 	req.hpp = hpp
-	return req.ToJSON()
+	return req.ToJSON(encoded)
 }
 
 // FromJSON produces a Response from a JSON response
-func (hpp *HPP) FromJSON(data []byte) (*Response, error) {
+func (hpp *HPP) FromJSON(data []byte, encoded bool) (*Response, error) {
 	resp := Response{hpp: hpp}
-	err := resp.FromJSON(data)
+	err := resp.FromJSON(data, encoded)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to build response from json")
 	}

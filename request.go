@@ -144,7 +144,7 @@ func (r *Request) MarshalJSON() ([]byte, error) {
 // ToJSON converts the request into valid JSON
 // Validates inputs, generates security hash, order ID and time stamp (if required)
 // Base64 encodes inputs, and serialises itself to JSON
-func (r *Request) ToJSON() (json.RawMessage, error) {
+func (r *Request) ToJSON(encoded bool) (json.RawMessage, error) {
 	fmt.Println("Converting HppRequest to JSON.")
 
 	fmt.Println("Generating defaults.")
@@ -158,7 +158,11 @@ func (r *Request) ToJSON() (json.RawMessage, error) {
 		return nil, errors.Wrap(err, "failed to validate HPP request")
 	}
 
-	return MarshalJSONEncoded(r)
+	if encoded {
+		return MarshalJSONEncoded(r, encoded)
+	}
+
+	return json.Marshal(r)
 }
 
 // GenerateDefaults sets the timestamp and order ID if they aren't already set
@@ -236,21 +240,25 @@ func (r *Request) canStoreCard() bool {
 }
 
 // MarshalJSONEncoded marshals the request and Base64 encodes the values
-func MarshalJSONEncoded(r interface{}) (json.RawMessage, error) {
-	js, err := json.Marshal(r)
+func MarshalJSONEncoded(req interface{}, encoded bool) (json.RawMessage, error) {
+	js, err := json.Marshal(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal HPP request")
 	}
 
-	encoded := map[string]string{}
-	err = json.Unmarshal(js, &encoded)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal HPP request json")
+	if encoded {
+		ereq := map[string]string{}
+		err = json.Unmarshal(js, &ereq)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal HPP request json")
+		}
+
+		for k, v := range ereq {
+			ereq[k] = base64.StdEncoding.EncodeToString([]byte(v))
+		}
+
+		return json.Marshal(ereq)
 	}
 
-	for k, v := range encoded {
-		encoded[k] = base64.StdEncoding.EncodeToString([]byte(v))
-	}
-
-	return json.Marshal(encoded)
+	return js, err
 }
