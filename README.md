@@ -21,14 +21,14 @@ import hpp "github.com/Fatsoma/rxp-hpp-go"
 ### Creating Request JSON for Realex JS SDK
 ```golang
 
-req := hpp.Request{
-  req.Amount = 100
-  req.Currency = "EUR"
-  req.MerchantID = "merchantID"
+req := Request{
+  Amount:     100,
+  Currency:   "EUR",
+  MerchantID: "merchantID",
 }
 json, err := hpp.New("secret").ToJSON(req)
 if err != nil {
-    // make request with built JSON
+  // make request with built JSON
 }
 
 ```

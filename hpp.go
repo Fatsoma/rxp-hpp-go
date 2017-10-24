@@ -35,7 +35,6 @@ func (hpp *HPP) FromJSON(data []byte) (*Response, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to build response from json")
 	}
-
 	return &resp, nil
 }
 
