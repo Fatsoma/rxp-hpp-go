@@ -15,10 +15,6 @@ import (
 func TestRequestMarshalJSON(t *testing.T) {
 	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
 	hpp := New("mysecret")
-	ecs := JSONBool(false)
-	osc := JSONBool(false)
-	dcc := JSONBool(false)
-	vco := JSONBool(false)
 
 	var tests = []struct {
 		//given
@@ -39,7 +35,7 @@ func TestRequestMarshalJSON(t *testing.T) {
 				BillingCountry:    "IRELAND",
 				BillingCode:       "123|56",
 				CardPaymentButton: "Submit Payment",
-				EnableCardStorage: &ecs,
+				EnableCardStorage: "0",
 				CommentOne:        "a-z A-Z 0-9 ' \", + “” ._ - & \\ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥",
 				CommentTwo:        "Comment Two",
 				Currency:          "EUR",
@@ -48,17 +44,18 @@ func TestRequestMarshalJSON(t *testing.T) {
 				MerchantID:        "MerchantID",
 				PayerReference:    "PayerRef",
 				PaymentReference:  "PaymentRef",
-				OfferSaveCard:     &osc,
+				OfferSaveCard:     "0",
 				OrderID:           "OrderID",
 				Hash:              "5d8f05abd618e50db4861a61cc940112786474cf",
 				ShippingCountry:   "IRELAND",
 				ShippingCode:      "56|987",
 				TimeStamp:         &timestamp,
 				ProductID:         "ProductID",
-				ValidCardOnly:     &vco,
+				ReturnTSS:         "0",
+				ValidCardOnly:     "0",
 				VariableReference: "VariableRef",
 				PayerExists:       "0",
-				DCCEnable:         &dcc,
+				DCCEnable:         "0",
 				SupplementaryData: map[string]interface{}{
 					"UNKNOWN_1": "Unknown value 1",
 					"UNKNOWN_2": "Unknown value 2",
@@ -167,9 +164,24 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			"Given attributes that do not match their regexp patterns",
-			Request{MerchantID: "test%"},
+			Request{
+				MerchantID:        "test%",
+				ReturnTSS:         "2",
+				EnableCardStorage: "2",
+				OfferSaveCard:     "2",
+				ValidCardOnly:     "2",
+				DCCEnable:         "2",
+			},
 
-			fmt.Errorf("MERCHANT_ID: %s", merchantIDPattern),
+			fmt.Errorf(
+				"CARD_STORAGE_ENABLE: %s; DCC_ENABLE: %s; MERCHANT_ID: %s; OFFER_SAVE_CARD: %s; RETURN_TSS: %s; VALIDATE_CARD_ONLY: %s",
+				cardStorageEnablePattern,
+				dccEnablePattern,
+				merchantIDPattern,
+				offerSaveCardPattern,
+				returnTssPattern,
+				validateCardOnlyPattern,
+			),
 		},
 	}
 
@@ -186,7 +198,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func TestBuildHash(t *testing.T) {
+func TestRequestBuildHash(t *testing.T) {
 	var tests = []struct {
 		//given
 		description string
@@ -315,8 +327,7 @@ func testRequest(cardStorage, selectStoredCard, fraudFilterMode bool) Request {
 	}
 
 	if cardStorage {
-		ecs := JSONBool(true)
-		r.EnableCardStorage = &ecs
+		r.EnableCardStorage = "1"
 	}
 
 	if selectStoredCard {

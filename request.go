@@ -55,7 +55,7 @@ type Request struct {
 
 	// Used to signify whether or not you want a Transaction Suitability Score for this transaction.
 	// Can be "0" for no and "1" for yes.
-	ReturnTSS JSONBool `json:"RETURN_TSS"`
+	ReturnTSS string `json:"RETURN_TSS"`
 
 	// The postcode or ZIP of the shipping address.
 	ShippingCode string `json:"SHIPPING_CODE,omitempty"`
@@ -89,10 +89,10 @@ type Request struct {
 	CardPaymentButton string `json:"CARD_PAYMENT_BUTTON,omitempty"`
 
 	// Enable card storage.
-	EnableCardStorage *JSONBool `json:"CARD_STORAGE_ENABLE,omitempty"`
+	EnableCardStorage string `json:"CARD_STORAGE_ENABLE,omitempty"`
 
 	// Offer to save the card.
-	OfferSaveCard *JSONBool `json:"OFFER_SAVE_CARD,omitempty"`
+	OfferSaveCard string `json:"OFFER_SAVE_CARD,omitempty"`
 
 	// The payer reference.
 	PayerReference string `json:"PAYER_REF"`
@@ -104,10 +104,10 @@ type Request struct {
 	PayerExists string `json:"PAYER_EXIST,omitempty"`
 
 	// Used to identify an OTB transaction.
-	ValidCardOnly *JSONBool `json:"VALIDATE_CARD_ONLY,omitempty"`
+	ValidCardOnly string `json:"VALIDATE_CARD_ONLY,omitempty"`
 
 	// Transaction level configuration to enable/disable a DCC request. (Only if the merchant is configured).
-	DCCEnable *JSONBool `json:"DCC_ENABLE,omitempty"`
+	DCCEnable string `json:"DCC_ENABLE,omitempty"`
 
 	// Override merchant configuration for fraud. (Only if the merchant is configured for fraud).
 	FraudFilterMode string `json:"HPP_FRAUDFILTER_MODE,omitempty"`
@@ -187,8 +187,13 @@ func (r *Request) Validate() error {
 		validateCurrency(&r.Currency),
 		validateHash(&r.Hash),
 		validateAutoSettleFlag(&r.AutoSettleFlag),
+		validateEnableCardStorage(&r.EnableCardStorage),
+		validateOfferSaveCard(&r.OfferSaveCard),
+		validateValidCardOnly(&r.ValidCardOnly),
+		validateDCCEnable(&r.DCCEnable),
 		validateComment(&r.CommentOne),
 		validateComment(&r.CommentTwo),
+		validateReturnTSS(&r.ReturnTSS),
 		validateShippingCode(&r.ShippingCode),
 		validateShippingCountry(&r.ShippingCountry),
 		validateBillingCode(&r.BillingCode),
@@ -236,11 +241,7 @@ func (r *Request) basicHash() []string {
 }
 
 func (r *Request) canStoreCard() bool {
-	var ecs bool
-	if r.EnableCardStorage != nil {
-		ecs = bool(*r.EnableCardStorage)
-	}
-	return ecs || r.SelectStoredCard != ""
+	return r.EnableCardStorage == "1" || r.SelectStoredCard != ""
 }
 
 // MarshalJSONEncoded marshals the request and Base64 encodes the values

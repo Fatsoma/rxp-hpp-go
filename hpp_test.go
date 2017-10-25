@@ -18,10 +18,6 @@ func TestHPPNew(t *testing.T) {
 func TestToJSON(t *testing.T) {
 	hpp := New("mysecret")
 	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
-	ecs := JSONBool(false)
-	osc := JSONBool(false)
-	vco := JSONBool(false)
-	dcc := JSONBool(false)
 
 	req := Request{
 		hpp:               &hpp,
@@ -33,7 +29,7 @@ func TestToJSON(t *testing.T) {
 		Amount:            100,
 		CommentOne:        `a-z A-Z 0-9 ' ", + “” ._ - & \ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥`,
 		CommentTwo:        `Comment Two`,
-		ReturnTSS:         false,
+		ReturnTSS:         "0",
 		ShippingCode:      "56|987",
 		ShippingCountry:   "IRELAND",
 		BillingCode:       "123|56",
@@ -44,13 +40,13 @@ func TestToJSON(t *testing.T) {
 		Language:          "EN",
 		CardPaymentButton: "Submit Payment",
 		AutoSettleFlag:    "1",
-		EnableCardStorage: &ecs,
-		OfferSaveCard:     &osc,
+		EnableCardStorage: "0",
+		OfferSaveCard:     "0",
 		PayerReference:    "PayerRef",
 		PaymentReference:  "PaymentRef",
 		PayerExists:       "0",
-		ValidCardOnly:     &vco,
-		DCCEnable:         &dcc,
+		ValidCardOnly:     "0",
+		DCCEnable:         "0",
 	}
 
 	var tests = []struct {

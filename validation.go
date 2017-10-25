@@ -161,11 +161,46 @@ func validateAutoSettleFlag(autoSettle *string) *validation.FieldRules {
 	)
 }
 
+func validateEnableCardStorage(ecs *string) *validation.FieldRules {
+	return validation.Field(
+		ecs,
+		validation.Match(boolRegexp).Error(cardStorageEnablePattern),
+	)
+}
+
+func validateOfferSaveCard(osc *string) *validation.FieldRules {
+	return validation.Field(
+		osc,
+		validation.Match(boolRegexp).Error(offerSaveCardPattern),
+	)
+}
+
+func validateValidCardOnly(vco *string) *validation.FieldRules {
+	return validation.Field(
+		vco,
+		validation.Match(boolRegexp).Error(validateCardOnlyPattern),
+	)
+}
+
+func validateDCCEnable(dcce *string) *validation.FieldRules {
+	return validation.Field(
+		dcce,
+		validation.Match(boolRegexp).Error(dccEnablePattern),
+	)
+}
+
 func validateComment(comment *string) *validation.FieldRules {
 	return validation.Field(
 		comment,
 		validation.Length(0, 255).Error(commentSize),
 		validation.Match(commentRegexp).Error(commentPattern),
+	)
+}
+
+func validateReturnTSS(tss *string) *validation.FieldRules {
+	return validation.Field(
+		tss,
+		validation.Match(boolRegexp).Error(returnTssPattern),
 	)
 }
 
