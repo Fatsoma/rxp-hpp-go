@@ -89,10 +89,10 @@ type Request struct {
 	CardPaymentButton string `json:"CARD_PAYMENT_BUTTON,omitempty"`
 
 	// Enable card storage.
-	EnableCardStorage JSONBool `json:"CARD_STORAGE_ENABLE"`
+	EnableCardStorage *JSONBool `json:"CARD_STORAGE_ENABLE,omitempty"`
 
 	// Offer to save the card.
-	OfferSaveCard JSONBool `json:"OFFER_SAVE_CARD"`
+	OfferSaveCard *JSONBool `json:"OFFER_SAVE_CARD,omitempty"`
 
 	// The payer reference.
 	PayerReference string `json:"PAYER_REF"`
@@ -104,10 +104,10 @@ type Request struct {
 	PayerExists string `json:"PAYER_EXIST,omitempty"`
 
 	// Used to identify an OTB transaction.
-	ValidCardOnly JSONBool `json:"VALIDATE_CARD_ONLY"`
+	ValidCardOnly *JSONBool `json:"VALIDATE_CARD_ONLY,omitempty"`
 
 	// Transaction level configuration to enable/disable a DCC request. (Only if the merchant is configured).
-	DCCEnable JSONBool `json:"DCC_ENABLE"`
+	DCCEnable *JSONBool `json:"DCC_ENABLE,omitempty"`
 
 	// Override merchant configuration for fraud. (Only if the merchant is configured for fraud).
 	FraudFilterMode string `json:"HPP_FRAUDFILTER_MODE,omitempty"`
@@ -236,7 +236,11 @@ func (r *Request) basicHash() []string {
 }
 
 func (r *Request) canStoreCard() bool {
-	return bool(r.EnableCardStorage) || r.SelectStoredCard != ""
+	var ecs bool
+	if r.EnableCardStorage != nil {
+		ecs = bool(*r.EnableCardStorage)
+	}
+	return ecs || r.SelectStoredCard != ""
 }
 
 // MarshalJSONEncoded marshals the request and Base64 encodes the values

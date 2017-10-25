@@ -18,6 +18,10 @@ func TestHPPNew(t *testing.T) {
 func TestToJSON(t *testing.T) {
 	hpp := New("mysecret")
 	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
+	ecs := JSONBool(false)
+	osc := JSONBool(false)
+	vco := JSONBool(false)
+	dcc := JSONBool(false)
 
 	req := Request{
 		hpp:               &hpp,
@@ -40,13 +44,13 @@ func TestToJSON(t *testing.T) {
 		Language:          "EN",
 		CardPaymentButton: "Submit Payment",
 		AutoSettleFlag:    "1",
-		EnableCardStorage: false,
-		OfferSaveCard:     false,
+		EnableCardStorage: &ecs,
+		OfferSaveCard:     &osc,
 		PayerReference:    "PayerRef",
 		PaymentReference:  "PaymentRef",
 		PayerExists:       "0",
-		ValidCardOnly:     false,
-		DCCEnable:         false,
+		ValidCardOnly:     &vco,
+		DCCEnable:         &dcc,
 	}
 
 	var tests = []struct {

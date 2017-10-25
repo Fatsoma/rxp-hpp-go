@@ -15,6 +15,10 @@ import (
 func TestRequestMarshalJSON(t *testing.T) {
 	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
 	hpp := New("mysecret")
+	ecs := JSONBool(false)
+	osc := JSONBool(false)
+	dcc := JSONBool(false)
+	vco := JSONBool(false)
 
 	var tests = []struct {
 		//given
@@ -35,6 +39,7 @@ func TestRequestMarshalJSON(t *testing.T) {
 				BillingCountry:    "IRELAND",
 				BillingCode:       "123|56",
 				CardPaymentButton: "Submit Payment",
+				EnableCardStorage: &ecs,
 				CommentOne:        "a-z A-Z 0-9 ' \", + “” ._ - & \\ / @ ! ? % ( )* : £ $ & € # [ ] | = ;ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷ø¤ùúûüýþÿŒŽšœžŸ¥",
 				CommentTwo:        "Comment Two",
 				Currency:          "EUR",
@@ -43,14 +48,17 @@ func TestRequestMarshalJSON(t *testing.T) {
 				MerchantID:        "MerchantID",
 				PayerReference:    "PayerRef",
 				PaymentReference:  "PaymentRef",
+				OfferSaveCard:     &osc,
 				OrderID:           "OrderID",
 				Hash:              "5d8f05abd618e50db4861a61cc940112786474cf",
 				ShippingCountry:   "IRELAND",
 				ShippingCode:      "56|987",
 				TimeStamp:         &timestamp,
 				ProductID:         "ProductID",
+				ValidCardOnly:     &vco,
 				VariableReference: "VariableRef",
 				PayerExists:       "0",
+				DCCEnable:         &dcc,
 				SupplementaryData: map[string]interface{}{
 					"UNKNOWN_1": "Unknown value 1",
 					"UNKNOWN_2": "Unknown value 2",
@@ -307,7 +315,8 @@ func testRequest(cardStorage, selectStoredCard, fraudFilterMode bool) Request {
 	}
 
 	if cardStorage {
-		r.EnableCardStorage = true
+		ecs := JSONBool(true)
+		r.EnableCardStorage = &ecs
 	}
 
 	if selectStoredCard {
