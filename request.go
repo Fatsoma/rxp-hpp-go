@@ -35,7 +35,7 @@ type Request struct {
 	Currency string `json:"CURRENCY,omitempty"`
 
 	// Date and time of the transaction. Entered in the following format: YYYYMMDDHHMMSS. Must be within 24 hours of the current time.
-	TimeStamp *JSONTime `json:"TIMESTAMP"`
+	TimeStamp *time.Time `json:"TIMESTAMP"`
 
 	// A digital signature generated using the SHA-1 algorithm.
 	Hash string `json:"SHA1HASH"`
@@ -55,7 +55,7 @@ type Request struct {
 
 	// Used to signify whether or not you want a Transaction Suitability Score for this transaction.
 	// Can be "0" for no and "1" for yes.
-	ReturnTSS string `json:"RETURN_TSS"`
+	ReturnTSS string `json:"RETURN_TSS,omitempty"`
 
 	// The postcode or ZIP of the shipping address.
 	ShippingCode string `json:"SHIPPING_CODE,omitempty"`
@@ -95,7 +95,7 @@ type Request struct {
 	OfferSaveCard string `json:"OFFER_SAVE_CARD,omitempty"`
 
 	// The payer reference.
-	PayerReference string `json:"PAYER_REF"`
+	PayerReference string `json:"PAYER_REF,omitempty"`
 
 	// The payment reference.
 	PaymentReference string `json:"PMT_REF,omitempty"`
@@ -125,8 +125,14 @@ type Request struct {
 // MarshalJSON override the standard JSON marshaller to include the supplementary data
 func (r *Request) MarshalJSON() ([]byte, error) {
 	type Alias Request
-	ra := (*Alias)(r)
-	js, err := json.Marshal(ra)
+
+	js, err := json.Marshal(&struct {
+		TimeStamp *JSONTime `json:"TIMESTAMP"`
+		*Alias
+	}{
+		r.timeStampJSON(),
+		(*Alias)(r),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to marshal request")
 	}
@@ -139,6 +145,24 @@ func (r *Request) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(sup)
+}
+
+func (r *Request) timeStampStr() string {
+	t := r.timeStampJSON()
+	if t != nil {
+		return t.String()
+	}
+
+	return ""
+}
+
+func (r *Request) timeStampJSON() *JSONTime {
+	if r.TimeStamp != nil {
+		ts := JSONTime(*r.TimeStamp)
+		return &ts
+	}
+
+	return nil
 }
 
 // ToJSON converts the request into valid JSON
@@ -168,7 +192,7 @@ func (r *Request) ToJSON(encoded bool) (json.RawMessage, error) {
 // GenerateDefaults sets the timestamp and order ID if they aren't already set
 func (r *Request) GenerateDefaults() {
 	if r.TimeStamp == nil {
-		now := JSONTime(time.Now())
+		now := time.Now()
 		r.TimeStamp = &now
 	}
 
@@ -230,14 +254,10 @@ func (r *Request) buildHashString() string {
 }
 
 func (r *Request) basicHash() []string {
-	ts := ""
-	if r.TimeStamp != nil {
-		ts = r.TimeStamp.String()
-	}
 	amount := strconv.Itoa(r.Amount)
 	orderID := string(r.OrderID)
 
-	return []string{ts, r.MerchantID, orderID, amount, r.Currency}
+	return []string{r.timeStampStr(), r.MerchantID, orderID, amount, r.Currency}
 }
 
 func (r *Request) canStoreCard() bool {

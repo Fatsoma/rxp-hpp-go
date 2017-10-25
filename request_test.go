@@ -13,7 +13,7 @@ import (
 )
 
 func TestRequestMarshalJSON(t *testing.T) {
-	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
+	timestamp := time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC)
 	hpp := New("mysecret")
 
 	var tests = []struct {
@@ -315,11 +315,10 @@ func TestMarshalJSONEncoded(t *testing.T) {
 func testRequest(cardStorage, selectStoredCard, fraudFilterMode bool) Request {
 	hpp := New("mysecret")
 	timestamp := time.Date(2013, 8, 14, 12, 22, 39, 0, time.UTC)
-	t := JSONTime(timestamp)
 
 	r := Request{
 		hpp:        &hpp,
-		TimeStamp:  &t,
+		TimeStamp:  &timestamp,
 		MerchantID: "thestore",
 		OrderID:    "ORD453-11",
 		Amount:     29900,

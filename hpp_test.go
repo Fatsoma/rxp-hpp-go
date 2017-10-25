@@ -17,7 +17,7 @@ func TestHPPNew(t *testing.T) {
 
 func TestToJSON(t *testing.T) {
 	hpp := New("mysecret")
-	timestamp := JSONTime(time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC))
+	timestamp := time.Date(2099, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	req := Request{
 		hpp:               &hpp,
