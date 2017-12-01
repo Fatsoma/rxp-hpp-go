@@ -192,7 +192,8 @@ func (r *Request) ToJSON(encoded bool) (json.RawMessage, error) {
 // GenerateDefaults sets the timestamp and order ID if they aren't already set
 func (r *Request) GenerateDefaults() {
 	if r.TimeStamp == nil {
-		now := time.Now()
+		// the documentation isn't clear on this but let's assume UTC
+		now := time.Now().UTC()
 		r.TimeStamp = &now
 	}
 
